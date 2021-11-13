@@ -1,4 +1,3 @@
-import torch
 from torch import Tensor
 import torch.nn as nn
 from torch.nn.init import xavier_uniform_
@@ -11,7 +10,8 @@ __all__ = ["Dense"]
 
 class Dense(nn.Linear):
     """
-    Docstring
+    Applies a linear transformation to the incoming data, and if activation is not None,
+    apply activation function after linear transformation.
 
     Attributes
     ----------
@@ -19,9 +19,9 @@ class Dense(nn.Linear):
         size of each input sample.
     out_features : int
         size of each output sample
-    bias : bool, optional
+    bias : bool, default=True
         If set to False, the layer will not learn an additive bias.
-    activation : collable, optional
+    activation : collable or None, default=None
         activation function after calculating the linear layer.
     weight_init : collable, default=torch.nn.init.xavier_uniform_
     bias_init : collable, default=torch.nn.init.constant_

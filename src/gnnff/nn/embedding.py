@@ -8,7 +8,8 @@ __all__ = ["NodeEmbedding", "EdgeEmbedding"]
 
 class NodeEmbedding(nn.Embedding):
     """
-    Docstring
+    Initial node embedding layer.
+    From atomic-numbers, calculates the node embedding tensor.
 
     Attributes
     ----------
@@ -52,7 +53,7 @@ def gaussian_filter(distances, offsets, widths, centered=True):
         offsets values of Gaussian functions.
     widths : torch.Tensor
         width values of Gaussian functions.
-    centered : bool, optional
+    centered : bool, default=True
         If True, Gaussians are centered at the origin and the offsets are used
         to as their widths (used e.g. for angular functions).
 
@@ -65,7 +66,7 @@ def gaussian_filter(distances, offsets, widths, centered=True):
         # if Gaussian functions are centered, use offsets to compute widths
         eta = 0.5 / torch.pow(offsets, 2)
         # if Gaussian functions are centered, no offset is subtracted
-        mu = distances[:, :, :, None]
+        myu = distances[:, :, :, None]
 
     else:
         # compute width of Gaussian functions (using an overlap of 1 STDDEV)
@@ -80,17 +81,18 @@ def gaussian_filter(distances, offsets, widths, centered=True):
 
 class EdgeEmbedding(nn.Module):
     """
-    Docstring
+    Initial edge embedding layer.
+    From inter-atomic distaces, calculates the edge embedding tensor.
 
     Attributes
     ----------
-    start : float, optional
+    start : float, default=0.0
         width of first Gaussian function, :math:`\mu_0`.
-    stop : float, optional
+    stop : float, default=8.0
         width of last Gaussian function, :math:`\mu_{N_g}`
-    num_gaussians : int, optional
+    n_gaussians : int, default=100
         total number of Gaussian functions, :math:`N_g`.
-    centered : bool, optional
+    centered : bool, default=True
         If False, Gaussian's centered values are varied at the offset values and the width value is constant.
     """
 
@@ -98,11 +100,11 @@ class EdgeEmbedding(nn.Module):
         self,
         start: float = 0.0,
         stop: float = 8.0,
-        num_gaussians: int = 100,
+        n_gaussian: int = 100,
         centered: bool = True,
     ) -> None:
         super().__init__()
-        offsets = torch.linspace(start=start, end=stop, steps=num_gaussians)
+        offsets = torch.linspace(start=start, end=stop, steps=n_gaussian)
         widths = torch.FloatTensor((offsets[1] - offsets[0]) * torch.ones_like(offsets))
         self.register_buffer = ("offsets", offsets)
         self.register_buffer = ("widths", widths)
@@ -110,7 +112,7 @@ class EdgeEmbedding(nn.Module):
 
     def forward(self, distances: Tensor) -> Tensor:
         """
-        Compute filtered distance values with gaussian filter.
+        Compute filtered distance values with Gaussian filter.
 
         Parameters
         ----------
@@ -123,5 +125,5 @@ class EdgeEmbedding(nn.Module):
             filtered distances of (N_batch x N_atoms x N_neighbor x N_gaussian) shape.
         """
         return gaussian_filter(
-            distances, self.offsets, self.width, centered=self.centered
+            distances, self.offsets, self.widths, centered=self.centered
         )
