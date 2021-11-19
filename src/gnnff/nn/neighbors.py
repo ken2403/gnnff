@@ -24,13 +24,13 @@ def atomic_distances(
     Parameters
     ----------
     positions : torch.Tensor
-        atomic Cartesian coordinates with (B x At x 3) shape
+        atomic Cartesian coordinates with (B x At x 3) shape.
     neighbors (torch.Tensor):
-        indices of neighboring atoms to consider with (B x At x Nbr) shape
+        indices of neighboring atoms to consider with (B x At x Nbr) shape.
     cell : torch.tensor or None, default=None
-        periodic cell of (N_b x 3 x 3) shape
+        periodic cell of (N_b x 3 x 3) shape.
     cell_offsets : torch.Tensor or None, default=None
-        offset of atom in cell coordinates with (B x At x Nbr x 3) shape
+        offset of atom in cell coordinates with (B x At x Nbr x 3) shape.
     return_vecs : bool, default=True
         if False, not returns direction vectors.
     normalize_vecs : bool, default=True
@@ -59,10 +59,10 @@ def atomic_distances(
 
     # add cell offset
     if cell is not None:
-        B, A, N, D = cell_offsets.size()
-        cell_offsets = cell_offsets.view(B, A * N, D)
+        B, At, Nbr, D = cell_offsets.size()
+        cell_offsets = cell_offsets.view(B, At * Nbr, D)
         offsets = cell_offsets.bmm(cell)
-        offsets = offsets.view(B, A, N, D)
+        offsets = offsets.view(B, At, Nbr, D)
         dist_vec += offsets
 
     # Compute vector lengths
@@ -88,10 +88,63 @@ def atomic_distances(
 
 
 class AtomicDistances(nn.Module):
-    """ """
+    """
+    Layer for computing distance of every atom to its neighbors.
 
-    def __init__(self) -> None:
+    Attributes
+    ----------
+    return_directions : bool, default=True
+        if False, the `forward` method does not return normalized direction vectors.
+    """
+
+    def __init__(self, return_directions: bool) -> None:
         super().__init__()
+        self.return_directions = return_directions
+
+    def forward(
+        self,
+        positions: Tensor,
+        neighbors: Tensor,
+        cell=None,
+        cell_offsets=None,
+        neighbor_mask=None,
+    ) -> Tensor:
+        """
+        Compute distance of every atom to its neighbors.
+
+        B   :  Batch size
+        At  :  Total number of atoms in the batch
+        Nbr :  Total number of neighbors of each atom
+
+        Parameters
+        ----------
+        positions : torch.Tensor
+            atomic Cartesian coordinates with (B x At x 3) shape.
+        neighbors (torch.Tensor):
+            indices of neighboring atoms to consider with (B x At x Nbr) shape.
+        cell : torch.tensor or None, default=None
+            periodic cell of (N_b x 3 x 3) shape.
+        cell_offsets : torch.Tensor or None, default=None
+            offset of atom in cell coordinates with (B x At x Nbr x 3) shape.
+        neighbor_mask : torch.Tensor or None, default=None
+            boolean mask for neighbor positions.
+
+        Returns
+        -------
+        torch.Tensor
+            layer output of (B x At x Nbr) shape.
+        dist_vec : torch.Tensor
+            direction cosines of every atom to its neighbors with (B x At x Nbr x 3) shape.
+        """
+        return atomic_distances(
+            positions,
+            neighbors,
+            cell,
+            cell_offsets,
+            return_vecs=self.return_directions,
+            normalize_vecs=True,
+            neighbor_mask=neighbor_mask,
+        )
 
 
 class GetNodeK(nn.Module):
