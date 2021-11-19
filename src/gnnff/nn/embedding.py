@@ -27,15 +27,18 @@ class NodeEmbedding(nn.Embedding):
         """
         Compute layer output.
 
+        B   :  Batch size
+        At  :  Total number of atoms in the batch
+
         Parameters
         ----------
         inputs : torch.Tensor
-            batch of input values.
+            batch of input values. (B x At) of shape.
 
         Returns
         -------
         y : torch.Tensor
-            layer output.
+            layer output. (B x At x embeddig_dim) of shape.
         """
         y = super().forward(inputs)
         return y
@@ -45,10 +48,15 @@ def gaussian_filter(distances, offsets, widths, centered=True):
     """
     Filtered interatomic distance values using Gaussian functions.
 
+    B   :  Batch size
+    At  :  Total number of atoms in the batch
+    Nbr :  Total number of neighbors of each atom
+    G   :  Filtered features
+
     Parameters
     ----------
     distances : torch.Tensor
-        interatomic distances of (N_batch x N_atoms x N_neighbors) shape.
+        interatomic distances of (B x At x Nbr) shape.
     offsets : torch.Tensor
         offsets values of Gaussian functions.
     widths : torch.Tensor
@@ -60,7 +68,7 @@ def gaussian_filter(distances, offsets, widths, centered=True):
     Returns
     -------
     filtered_distances : torch.Tensor
-        filtered distances of (N_batch x N_atoms x N_neighbor x N_gaussian) shape.
+        filtered distances of (B x At x Nbr x G) shape.
     """
     if centered:
         # if Gaussian functions are centered, use offsets to compute widths
@@ -114,15 +122,20 @@ class EdgeEmbedding(nn.Module):
         """
         Compute filtered distance values with Gaussian filter.
 
+        B   :  Batch size
+        At  :  Total number of atoms in the batch
+        Nbr :  Total number of neighbors of each atom
+        G   :  Filtered features. (n_gaussian)
+
         Parameters
         ----------
         distances : torch.Tensor
-            interatomic distance values of (N_batch x N_atoms x N_neighbors) shape.
+            interatomic distance values of (B x At x Nbr) shape.
 
         Returns
         -------
         filtered_distances : torch.Tensor
-            filtered distances of (N_batch x N_atoms x N_neighbor x N_gaussian) shape.
+            filtered distances of (B x At x Nbr x G) shape.
         """
         return gaussian_filter(
             distances, self.offsets, self.widths, centered=self.centered
