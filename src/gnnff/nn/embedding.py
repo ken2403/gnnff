@@ -95,9 +95,9 @@ class EdgeEmbedding(nn.Module):
     Attributes
     ----------
     start : float, default=0.0
-        width of first Gaussian function, :math:`\mu_0`.
+        center of first Gaussian function, :math:`\mu_0`.
     stop : float, default=8.0
-        width of last Gaussian function, :math:`\mu_{N_g}`
+        center of last Gaussian function, :math:`\mu_{N_g}`
     n_gaussians : int, default=100
         total number of Gaussian functions, :math:`N_g`.
     centered : bool, default=True

@@ -202,13 +202,6 @@ class MessagePassing(nn.Module):
         dimension of the embedded node features.
     n_edge_feature : int
         dimension of the embedded edge features.
-
-    Referrences
-    -----------
-    .. [1] Park, C.W., Kornbluth, M., Vandermause, J. et al.
-       Accurate and scalable graph neural network force field
-       and molecular dynamics with direct force architecture.
-       npj Comput Mater 7, 73 (2021).
     """
 
     def __init__(
