@@ -123,7 +123,7 @@ class AtomicDistances(nn.Module):
         neighbors (torch.Tensor):
             indices of neighboring atoms to consider with (B x At x Nbr) shape.
         cell : torch.tensor or None, default=None
-            periodic cell of (N_b x 3 x 3) shape.
+            periodic cell of (B x 3 x 3) shape.
         cell_offsets : torch.Tensor or None, default=None
             offset of atom in cell coordinates with (B x At x Nbr x 3) shape.
         neighbor_mask : torch.Tensor or None, default=None
@@ -183,9 +183,6 @@ class GetNodeK(nn.Module):
             node embedding of third atom. (B x At x Nbr x Nbr-1 x n_node_feature)
         """
         B, At, Nbr = nbr_idx.size()
-        node_embedding = node_embedding.unsqueeze(2).expand(
-            B, At, Nbr, self.n_node_feature
-        )
         # make index list of atom k
         k_idx_list = []
         for i in range(Nbr):
