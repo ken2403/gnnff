@@ -75,14 +75,14 @@ class GraphToFeatures(nn.Module):
     def forward(self, inputs: dict) -> Tensor:
         """
 
+        B   :  Batch size
+        At  :  Total number of atoms in the batch
+        Nbr :  Total number of neighbors of each atom
+
         Parameters
         ----------
         inputs : dict of torch.Tenso
             dictionary of property tensors in unit cell.
-
-        B   :  Batch size
-        At  :  Total number of atoms in the batch
-        Nbr :  Total number of neighbors of each atom
 
         Returns
         -------
@@ -100,7 +100,7 @@ class GraphToFeatures(nn.Module):
         cell_offset = inputs["_cell_offset"]
         nbr_idx = inputs["_neighbors"]
         neighbor_mask = inputs["_neighbor_mask"]
-        # atom_mask = inputs["_atom_mask"]
+        atom_mask = inputs["_atom_mask"]
 
         # get inter atomic distances
         r_ij, unit_vecs = self.distances(
