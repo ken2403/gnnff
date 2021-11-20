@@ -240,6 +240,16 @@ class GetEdgeK(nn.Module):
         """
         B, At, Nbr = nbr_idx.size()
 
+        # expande edge_embdding, (B x At x Nbr x n_edge_featutre)→(B x At x Nbr x Nbr x n_edge_feature)
+        nbr_idx_expand = nbr_idx.unsqueeze(3).expand(B, At, Nbr, self.n_edge_feature)
+        nbr_idx_expand = nbr_idx_expand.unsqueeze(3).expand(
+            B, At, Nbr, Nbr, self.n_edge_feature
+        )
+        nbr_idx_expand = nbr_idx_expand.reshape(B, At * Nbr, Nbr, self.n_edge_feature)
+        edge_embedding_expand = torch.gather(edge_embedding, 1, nbr_idx_expand)
+        edge_embedding_expand = edge_embedding_expand.view(
+            B, At, Nbr, Nbr, self.n_edge_feature
+        )
         # make index list of atom k
         k_idx_list = []
         for i in range(Nbr):
