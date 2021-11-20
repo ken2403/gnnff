@@ -12,20 +12,20 @@ class GNNFF(nn.Module):
 
     Attributes
     ----------
-    n_node_feature : int
+    n_node_feature : int, default=128
         dimension of the embedded node features.
-    n_edge_feature : int
+    n_edge_feature : int, default=128
         dimension of the embedded edge features.
-    n_message_passing : int
+    n_message_passing : int, default=3
         number of message passing layers.
-    gaussian_filter_end : float
+    gaussian_filter_end : float, default=8.0
         center of last Gaussian function.
-    share_weights : bool
+    share_weights : bool, default=False
         if True, share the weights across all message passing layers.
-    return_intermediate : bool
+    return_intermediate : bool, default=False
         if True, `forward` method also returns intermediate atomic representations
         after each message passing is applied.
-    n_output_layers : int
+    n_output_layers : int, default=2
         number of output layers.
 
     Referrences
@@ -41,13 +41,13 @@ class GNNFF(nn.Module):
 
     def __init__(
         self,
-        n_node_feature: int,
-        n_edge_feature: int,
-        n_message_passing: int,
-        gaussian_filter_end: float,
-        share_weights: bool,
-        return_intermediate: bool,
-        n_output_layers: int,
+        n_node_feature: int = 128,
+        n_edge_feature: int = 128,
+        n_message_passing: int = 3,
+        gaussian_filter_end: float = 8.0,
+        share_weights: bool = False,
+        return_intermediate: bool = False,
+        n_output_layers: int = 2,
     ) -> None:
         super().__init__()
         self.gnn = GraphToFeatures(
