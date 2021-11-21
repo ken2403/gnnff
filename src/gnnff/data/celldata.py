@@ -11,14 +11,14 @@ from ase.neighborlist import neighbor_list
 
 from gnnff.data.keys import Keys
 
-__all__ = ["CrystalData"]
+__all__ = ["CelllData"]
 
 
-class CrystalDataError(Exception):
+class CellDataError(Exception):
     pass
 
 
-class CrystalData(Dataset):
+class CellData(Dataset):
     """
 
     Attributes
@@ -36,7 +36,7 @@ class CrystalData(Dataset):
     ) -> None:
         # checks
         if not db_path.endswith(".db"):
-            raise CrystalDataError(
+            raise CellDataError(
                 "Invalid dbpath! Please make sure to add the file extension '.db' to your dbpath."
             )
         self.db_path = db_path
@@ -124,7 +124,7 @@ class CrystalData(Dataset):
                 return properties
 
             # raise error if available properties do not match database
-            raise CrystalDataError(
+            raise CellDataError(
                 "The available_properties {} do not match the "
                 "properties in the database {}!".format(properties, db_properties)
             )
@@ -133,7 +133,7 @@ class CrystalData(Dataset):
         if db_properties is not None:
             return db_properties
 
-        raise CrystalDataError(
+        raise CellDataError(
             "Please define available_properties or set db_path to an existing database!"
         )
 
@@ -305,7 +305,7 @@ def torchify_dict(data: dict):
         elif prop.dtype in [np.float32, np.float64]:
             torch_properties[pname] = torch.FloatTensor(prop.copy())
         else:
-            raise CrystalDataError(
+            raise CellDataError(
                 "Invalid datatype {} for property {}!".format(type(prop), pname)
             )
     return torch_properties

@@ -1,2 +1,2 @@
-from .crystaldata import *
+from .celldata import *
 from .keys import *
