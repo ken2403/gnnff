@@ -11,7 +11,7 @@ from ase.neighborlist import neighbor_list
 
 from gnnff.data.keys import Keys
 
-__all__ = ["CelllData"]
+__all__ = ["CellData"]
 
 
 class CellDataError(Exception):
