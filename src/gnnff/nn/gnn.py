@@ -1,6 +1,7 @@
 import torch
 from torch import Tensor
 import torch.nn as nn
+from gnnff.data.keys import Keys
 from gnnff.nn import AtomicDistances
 from gnnff.nn import NodeEmbedding, EdgeEmbedding
 from gnnff.nn import MessagePassing
@@ -88,41 +89,40 @@ class GraphToFeatures(nn.Module):
         -------
         last_edge_embedding : torch.Tensor
             inter atomic edge embedding tensors with (B x At x Nbr x n_edge_feature) shape.
-        unit_vecs : torch.Tensor
-            direction cosines of every atom to its neighbors with (B x At x Nbr x 3) shape.
         2 lists of torch.Tensor
             intermediate node and edge embeddings, if return_intermediate=True was used.
         """
         # get tensors from input dictionary
-        atomic_numbers = inputs["_atomic_numbers"]
-        positions = inputs["_positions"]
-        cell = inputs["_cell"]
-        cell_offset = inputs["_cell_offset"]
-        nbr_idx = inputs["_neighbors"]
-        neighbor_mask = inputs["_neighbor_mask"]
-        atom_mask = inputs["_atom_mask"]
+        atomic_numbers = inputs[Keys.Z]
+        nbr_idx = inputs[Keys.neighbors]
+        neighbor_mask = inputs[Keys.neighbor_mask]
+        atom_mask = inputs[Keys.atom_mask]
 
         # get inter atomic distances
-        r_ij, unit_vecs = self.distances(
-            positions, nbr_idx, cell, cell_offset, neighbor_mask=neighbor_mask
-        )
+        r_ij = inputs[Keys.distances]
+
+        # r_ij, unit_vecs = self.distances(
+        #     positions, nbr_idx, cell, cell_offset, neighbor_mask=neighbor_mask
+        # )
 
         # get initial embedding
-        node = self.initial_node_embedding(atomic_numbers)
-        edge = self.initial_edge_embedding(r_ij)
+        node_embedding = self.initial_node_embedding(atomic_numbers)
+        edge_embedding = self.initial_edge_embedding(r_ij)
 
         # store inter mediate values
         if self.return_intermediate:
-            node_list = [node]
-            edge_list = [edge]
+            node_list = [node_embedding]
+            edge_list = [edge_embedding]
 
         # message passing
         for message_passing in self.message_passings:
-            node, edge = message_passing(node, edge, nbr_idx)
+            node_embedding, edge_embedding = message_passing(
+                node_embedding, edge_embedding, nbr_idx
+            )
             if self.return_intermediate:
-                node_list.append(node)
-                edge_list.append(edge)
+                node_list.append(node_embedding)
+                edge_list.append(edge_embedding)
 
         if self.return_intermediate:
-            return edge, unit_vecs, node_list, edge_list
-        return edge, unit_vecs
+            return edge_embedding, node_list, edge_list
+        return edge_embedding

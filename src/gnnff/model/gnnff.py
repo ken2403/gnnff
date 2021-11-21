@@ -1,6 +1,7 @@
 import torch
 from torch import Tensor
 import torch.nn as nn
+from gnnff.data.keys import Keys
 from gnnff.nn import output
 from gnnff.nn.gnn import GraphToFeatures
 from gnnff.nn.output import ForceMagnitudeMapping
@@ -18,7 +19,9 @@ class GNNFF(nn.Module):
         dimension of the embedded edge features.
     n_message_passing : int, default=3
         number of message passing layers.
-    gaussian_filter_end : float, default=8.0
+    cutoff : float, default=8.0
+        cutoff radius.
+    gaussian_filter_end : float or None, default=None
         center of last Gaussian function.
     share_weights : bool, default=False
         if True, share the weights across all message passing layers.
@@ -37,6 +40,9 @@ class GNNFF(nn.Module):
     .. [2] Schütt, Sauceda, Kindermans, Tkatchenko, Müller:
        SchNet - a deep learning architecture for molceules and materials.
        The Journal of Chemical Physics 148 (24), 241722. 2018.
+    .. [3] M. Gastegger, L. Schwiedrzik, M. Bittermann, F. Berzsenyi, and P. Marquetand ,
+       "wACSF—Weighted atom-centered symmetry functions as descriptors in machine learning potentials",
+       J. Chem. Phys. 148, 241709 (2018)
     """
 
     def __init__(
@@ -44,12 +50,16 @@ class GNNFF(nn.Module):
         n_node_feature: int = 128,
         n_edge_feature: int = 128,
         n_message_passing: int = 3,
-        gaussian_filter_end: float = 8.0,
+        cutoff: float = 8.0,
+        gaussian_filter_end: float = None,
         share_weights: bool = False,
         return_intermediate: bool = False,
         n_output_layers: int = 2,
     ) -> None:
         super().__init__()
+        # implementation of gaussian_filter_end (ref: [3])
+        if gaussian_filter_end is None:
+            gaussian_filter_end = cutoff - 0.5
         self.gnn = GraphToFeatures(
             n_node_feature,
             n_edge_feature,
@@ -81,13 +91,16 @@ class GNNFF(nn.Module):
         2 lists of torch.Tensor
             intermediate node and edge embeddings, if return_intermediate=True was used.
         """
+        # from graph, calculating the force magnitude of each edge.
         if self.return_intermediate:
-            edge_embedding, unit_vecs, node_list, edge_list = self.gnn(inputs)
+            edge_embedding, node_list, edge_list = self.gnn(inputs)
         else:
-            edge_embedding, unit_vecs = self.gnn(inputs)
+            edge_embedding = self.gnn(inputs)
         force_magnitude = self.output_module(edge_embedding)
+
         # calculate inter atomic forces vector
         force_magnitude = force_magnitude.expand(-1, -1, -1, 3)
+        unit_vecs = inputs[Keys.unit_vecs]
         preditcted_forces = force_magnitude * unit_vecs
         # summation of all neighbors effection
         preditcted_forces = preditcted_forces.sum(dim=2)
