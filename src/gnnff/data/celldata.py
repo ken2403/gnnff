@@ -195,6 +195,10 @@ def _get_nbr_info(atoms: ase.Atoms, cutoff: float):
         (At x Nbr x 3) of shape.
     offset : np.ndarray
         cell offset values of neighboring atoms. (At x Nbr x 3)
+
+    References
+    ----------
+    .. [1] https://github.com/atomistic-machine-learning/schnetpack/blob/67226795af55719a7e4565ed773881841a94d130/src/schnetpack/environment.py
     """
     # get neighbor info form ase interface
     n_atoms = atoms.get_global_number_of_atoms()
@@ -227,6 +231,15 @@ def _get_nbr_info(atoms: ase.Atoms, cutoff: float):
         unit_vecs[mask] = unit_vecs[mask] / tmp_dist
         # neighbor mask
         nbr_mask = mask.astype(np.float32)
+        # Padding with 0 if there are not neighboring atoms.
+        nbr_idx = nbr_idx * nbr_mask
+
+    else:
+        nbr_idx = np.zeros((n_atoms, 1), dtype=np.int32)
+        nbr_mask = np.zeros((n_atoms, 1), dtype=np.float32)
+        distances = np.zeros((n_atoms, 1), dtype=np.float32)
+        unit_vecs = np.zeros((n_atoms, 1, 3), dtype=np.float32)
+        offset = np.zeros((n_atoms, 1, 3), dtype=np.float32)
 
     return nbr_idx, nbr_mask, distances, unit_vecs, offset
 
@@ -251,7 +264,7 @@ def _convert_atoms(atoms: ase.Atoms, cutoff: float, output: dict = None) -> dict
 
     References
     ----------
-    .. [1]https://github.com/ken2403/schnetpack/blob/6617dbf4edd1fc4d4aae0c984bc7a747a4fe9c0c/src/schnetpack/data/atoms.py
+    .. [1] https://github.com/ken2403/schnetpack/blob/6617dbf4edd1fc4d4aae0c984bc7a747a4fe9c0c/src/schnetpack/data/atoms.py
     """
     if output is None:
         outputs = {}
@@ -296,7 +309,7 @@ def torchify_dict(data: dict):
 
     References
     ----------
-    .. [1]https://github.com/ken2403/schnetpack/blob/6617dbf4edd1fc4d4aae0c984bc7a747a4fe9c0c/src/schnetpack/data/atoms.py
+    .. [1] https://github.com/ken2403/schnetpack/blob/6617dbf4edd1fc4d4aae0c984bc7a747a4fe9c0c/src/schnetpack/data/atoms.py
     """
     torch_properties = {}
     for pname, prop in data.items():
