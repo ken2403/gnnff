@@ -75,7 +75,6 @@ class GNNFF(nn.Module):
             return_intermediate,
         )
         self.return_intermediate = return_intermediate
-        self.property = property
         if property == "forces":
             self.output_module = ForceMagnitudeMapping(
                 n_edge_feature,
@@ -83,7 +82,7 @@ class GNNFF(nn.Module):
                 activation=output_activation,
                 property=property,
             )
-        if property == "energy":
+        elif property == "energy":
             self.output_module = EnergyMapping(
                 n_node_feature,
                 n_edge_feature,
@@ -91,10 +90,13 @@ class GNNFF(nn.Module):
                 activation=output_activation,
                 property=property,
             )
-        else:
+        elif property != "forces" and property != "energy":
             raise OutputModuleError(
-                "Invalid property! Please set the property parameter from 'energy' or 'forces'."
+                "Invalid property ({})! Please set the property parameter from 'energy' or 'forces'.".format(
+                    property
+                )
             )
+        self.property = property
 
     def forward(self, inputs: dict) -> Tensor:
         """
