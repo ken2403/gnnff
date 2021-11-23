@@ -115,8 +115,14 @@ class EdgeUpdate(nn.Module):
         self.get_node_k = GetNodeK(n_node_feature)
         self.get_edge_k = GetEdgeK(n_edge_feature)
         self.fc_two_body = Dense(n_node_feature, 2 * n_edge_feature, activation=None)
+        # self.fc_three_body = Dense(
+        #     3 * n_node_feature + 2 * n_edge_feature,
+        #     2 * n_edge_feature,
+        #     activation=None,
+        # )
+        # TODO: edge_jkをふくめる
         self.fc_three_body = Dense(
-            3 * n_node_feature + 2 * n_edge_feature,
+            3 * n_node_feature + n_edge_feature,
             2 * n_edge_feature,
             activation=None,
         )
@@ -186,8 +192,10 @@ class EdgeUpdate(nn.Module):
         node_j = node_j.unsqueeze(3).expand(B, At, Nbr, Nbr_k, n_node_feature)
         node_k = self.get_node_k(node_embedding, nbr_idx)
         edge_ij = edge_embedding.unsqueeze(3).expand(B, At, Nbr, Nbr_k, n_edge_feature)
-        edge_kj = self.get_edge_k(edge_embedding, nbr_idx)
-        c3 = torch.cat([node_i, node_j, node_k, edge_ij, edge_kj], dim=4)
+        # edge_jk = self.get_edge_k(edge_embedding, nbr_idx)
+        # c3 = torch.cat([node_i, node_j, node_k, edge_ij, edge_jk], dim=4)
+        # TODO: edge_kjをふくめる
+        c3 = torch.cat([node_i, node_j, node_k, edge_ij], dim=4)
         # fully connected layter with c3
         c3 = self.fc_three_body(c3)
         c3 = self.bn_three_body(c3.view(-1, 2 * n_edge_feature)).view(
