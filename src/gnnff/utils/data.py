@@ -35,14 +35,17 @@ def get_loader(dataset, args):
         pin_memory=args.cuda,
         collate_fn=_collate_aseatoms,
     )
-    test_loader = DataLoader(
-        dataset=test_data,
-        batch_size=args.batch_size,
-        shuffle=True,
-        num_workers=2,
-        pin_memory=args.cuda,
-        collate_fn=_collate_aseatoms,
-    )
+    if len(test_data) != 0:
+        test_loader = DataLoader(
+            dataset=test_data,
+            batch_size=args.batch_size,
+            shuffle=True,
+            num_workers=2,
+            pin_memory=args.cuda,
+            collate_fn=_collate_aseatoms,
+        )
+    elif len(test_data) == 0:
+        test_loader = None
     return train_loader, val_loader, test_loader
 
 
