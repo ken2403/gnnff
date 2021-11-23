@@ -230,19 +230,14 @@ def _get_nbr_info(atoms: ase.Atoms, cutoff: float):
         unit_vecs[mask] = dist_vecs
         tmp_dist = distances[mask, np.newaxis]
         unit_vecs[mask] = unit_vecs[mask] / tmp_dist
-        # neighbor mask
-        nbr_mask = mask.astype(np.float32)
-        # Padding with 0 if there are not neighboring atoms.
-        nbr_idx = nbr_idx * nbr_mask
 
     else:
         nbr_idx = np.zeros((n_atoms, 1), dtype=np.int32)
-        nbr_mask = np.zeros((n_atoms, 1), dtype=np.float32)
         distances = np.zeros((n_atoms, 1), dtype=np.float32)
         unit_vecs = np.zeros((n_atoms, 1, 3), dtype=np.float32)
         offset = np.zeros((n_atoms, 1, 3), dtype=np.float32)
 
-    return nbr_idx, nbr_mask, distances, unit_vecs, offset
+    return nbr_idx, distances, unit_vecs, offset
 
 
 def _convert_atoms(atoms: ase.Atoms, cutoff: float, output: dict = None) -> dict:
@@ -282,13 +277,10 @@ def _convert_atoms(atoms: ase.Atoms, cutoff: float, output: dict = None) -> dict
     )
 
     # get atom neighbors
-    nbh_idx, nbr_mask, distances, unit_vecs, offsets = _get_nbr_info(
-        atoms, cutoff=cutoff
-    )
+    nbh_idx, distances, unit_vecs, offsets = _get_nbr_info(atoms, cutoff=cutoff)
 
     # Get neighbors and neighbor mask
     outputs[Keys.neighbors] = nbh_idx.astype(np.int32)
-    outputs[Keys.neighbor_mask] = nbr_mask.astype(np.float32)
 
     # Get cells
     outputs[Keys.cell] = np.array(atoms.cell.array, dtype=np.float32)
