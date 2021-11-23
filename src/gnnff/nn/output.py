@@ -1,6 +1,8 @@
 import torch
 from torch import Tensor
 import torch.nn as nn
+
+from gnnff.nn.activation import shifted_softplus
 from gnnff.nn.base import Dense
 
 
@@ -32,7 +34,7 @@ class ForceMagnitudeMapping(nn.Module):
         self,
         n_edge_feature: int,
         n_layers: int = 2,
-        activation=nn.functional.softplus,
+        activation=shifted_softplus,
         property: str = "forces",
     ) -> None:
         super().__init__()
