@@ -4,7 +4,7 @@ import torch.nn as nn
 from gnnff.nn import Dense
 
 
-__all__ = ["ForceMagnitudeMapping"]
+__all__ = ["ForceMagnitudeMapping", "EnergyMapping"]
 
 
 class ForceMagnitudeMapping(nn.Module):
@@ -59,3 +59,25 @@ class ForceMagnitudeMapping(nn.Module):
             force magnitude for each pair of neighboring atoms. (B x At x Nbr x 1) shape.
         """
         return self.out_net(edge_embedding)
+
+
+class EnergyMapping(nn.Module):
+    """
+    From node and edge embedding tensor, calculating the total energy.
+
+    Attributes
+    ----------
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def forward(self):
+        """
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
