@@ -141,7 +141,7 @@ class CellData(Dataset):
     # Dataset function
     def __getitem__(self, idx: int):
         _, properties = self.get_properties(idx)
-        properties["_idx"] = np.array([idx], dtype=np.int)
+        properties["_idx"] = np.array([idx], dtype=np.int32)
 
         return torchify_dict(properties)
 
@@ -277,7 +277,9 @@ def _convert_atoms(atoms: ase.Atoms, cutoff: float, output: dict = None) -> dict
     positions = atoms.positions.astype(np.float32)
     positions -= _get_center_of_gravity(atoms)
     outputs[Keys.R] = positions
-    outputs[Keys.n_atoms] = atoms.get_global_number_of_atoms()
+    outputs[Keys.n_atoms] = np.array(atoms.get_global_number_of_atoms()).astype(
+        np.int32
+    )
 
     # get atom neighbors
     nbh_idx, nbr_mask, distances, unit_vecs, offsets = _get_nbr_info(
