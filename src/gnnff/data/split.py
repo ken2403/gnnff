@@ -45,9 +45,9 @@ def train_test_split(dataset, num_train, num_val, seed=None, split_path=None):
     # shuffle indices
     rs.shuffle(indices)
     # get each indices
-    train_idx = indices[:num_train]
-    val_idx = indices[num_train : num_train + num_val]
-    test_idx = indices[num_train + num_val :]
+    train_idx = indices[:num_train].tolist()
+    val_idx = indices[num_train : num_train + num_val].tolist()
+    test_idx = indices[num_train + num_val :].tolist()
 
     if split_path is not None:
         split_file = os.path.join(split_path, "split.npz")
