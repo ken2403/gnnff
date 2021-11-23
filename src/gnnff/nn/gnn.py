@@ -100,7 +100,7 @@ class GraphToFeatures(nn.Module):
         atomic_numbers = inputs[Keys.Z]
         nbr_idx = inputs[Keys.neighbors]
         nbr_mask = inputs[Keys.neighbor_mask]
-        atom_mask = inputs[Keys.atom_mask]
+        # atom_mask = inputs[Keys.atom_mask]
 
         # get inter atomic distances
         r_ij = inputs[Keys.distances]
