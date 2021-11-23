@@ -1,4 +1,5 @@
-from torch.utils.data import DataLoader, RandomSampler
+from torch.utils.data import DataLoader
+from torch.utils.data.sampler import RandomSampler
 
 from gnnff.data.split import train_test_split
 
@@ -18,7 +19,6 @@ def get_loader(dataset, args):
     train_loader = DataLoader(
         dataset=train_data,
         batch_size=args.batch_size,
-        shuffle=True,
         sampler=RandomSampler(train_data),
         num_workers=4,
         pin_memory=args.cuda,
@@ -37,4 +37,4 @@ def get_loader(dataset, args):
         num_workers=2,
         pin_memory=args.cuda,
     )
-    return train_data, val_loader, test_loader
+    return train_loader, val_loader, test_loader
