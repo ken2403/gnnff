@@ -51,6 +51,7 @@ def main(args):
             return_intermediate=args.return_intermediate,
             property=args.predict_property,
             n_output_layers=args.n_output_layers,
+            device=device,
         )
 
         # training
