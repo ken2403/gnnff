@@ -72,7 +72,9 @@ class GraphToFeatures(nn.Module):
             self.message_passings = nn.ModuleList(
                 [
                     MessagePassing(
-                        n_node_feature=n_node_feature, n_edge_feature=n_edge_feature
+                        n_node_feature=n_node_feature,
+                        n_edge_feature=n_edge_feature,
+                        device=device,
                     )
                     for _ in range(n_message_passing)
                 ]
