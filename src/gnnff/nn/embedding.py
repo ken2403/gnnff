@@ -69,21 +69,25 @@ def gaussian_filter(distances, offsets, widths, centered=True):
     -------
     filtered_distances : torch.Tensor
         filtered distances of (B x At x Nbr x G) shape.
+
+    References
+    ----------
+    .. [1] https://github.com/atomistic-machine-learning/schnetpack/blob/67226795af55719a7e4565ed773881841a94d130/src/schnetpack/nn/acsf.py
     """
     if centered:
         # if Gaussian functions are centered, use offsets to compute widths
         eta = 0.5 / torch.pow(offsets, 2)
         # if Gaussian functions are centered, no offset is subtracted
-        myu = distances[:, :, :, None]
+        diff = distances[:, :, :, None]
 
     else:
         # compute width of Gaussian functions (using an overlap of 1 STDDEV)
         eta = 0.5 / torch.pow(widths, 2)
         # Use advanced indexing to compute the individual components
-        myu = distances[:, :, :, None] - offsets[None, None, None, :]
+        diff = distances[:, :, :, None] - offsets[None, None, None, :]
 
     # compute smear distance values
-    filtered_distances = torch.exp(-eta * torch.pow(myu, 2))
+    filtered_distances = torch.exp(-eta * torch.pow(diff, 2))
     return filtered_distances
 
 

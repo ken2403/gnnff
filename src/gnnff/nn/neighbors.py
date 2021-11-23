@@ -57,7 +57,7 @@ class GetNodeK(nn.Module):
         nbr_k = torch.gather(nbr_k, 3, k_idx_list)
         nbr_k = nbr_k.reshape(B, At * Nbr * (Nbr - 1), 1)
         nbr_k = nbr_k.expand(-1, -1, self.n_node_feature)
-        # get atom k's embedding. (B, At, Nbr, Nbr-1, n_node_feature) of shape.
+        # get atom k's embedding. (B x At x Nbr x Nbr-1 x n_node_feature) of shape.
         node_k = torch.gather(node_embedding, 1, nbr_k)
         node_k = node_k.view(B, At, Nbr, Nbr - 1, self.n_node_feature)
         return node_k
@@ -100,16 +100,16 @@ class GetEdgeK(nn.Module):
         """
         B, At, Nbr = nbr_idx.size()
 
-        # expande edge_embdding, (B x At x Nbr x n_edge_featutre)→(B x At x Nbr x Nbr x n_edge_feature)
+        # expande edge_embdding, (B x At x Nbr x n_edge_featutre)->(B x At x Nbr x Nbr x n_edge_feature)
         nbr_idx_edge = nbr_idx.unsqueeze(3).expand(B, At, Nbr, self.n_edge_feature)
         nbr_idx_edge = nbr_idx_edge.unsqueeze(3).expand(
             B, At, Nbr, Nbr, self.n_edge_feature
         )
-        nbr_idx_edeg = nbr_idx_edge.reshape(B, At * Nbr, Nbr, self.n_edge_feature)
-        edge_embedding_expand = torch.gather(edge_embedding, 1, nbr_idx_edeg).view(
+        nbr_idx_edge = nbr_idx_edge.reshape(B, At * Nbr, Nbr, self.n_edge_feature)
+        edge_embedding_expand = torch.gather(edge_embedding, 1, nbr_idx_edge).view(
             B, At, Nbr, Nbr, self.n_edge_feature
         )
-        # expande nbr_idx, (B x At x Nbr)→(B x At x Nbr x Nbr)
+        # expande nbr_idx, (B x At x Nbr)->(B x At x Nbr x Nbr)
         nbr_idx_2 = nbr_idx.unsqueeze(3).expand(B, At, Nbr, Nbr)
         nbr_idx_2 = nbr_idx_2.reshape(B, At * Nbr, Nbr)
         nbr_idx_expand = torch.gather(nbr_idx, 1, nbr_idx_2).view(B, At, Nbr, Nbr)
