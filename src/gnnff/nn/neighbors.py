@@ -15,11 +15,16 @@ class GetNodeK(nn.Module):
     ----------
     n_node_feature : int
         dimension of the embedded node features.
+    device : torch.device, default=torch.device("cpu")
+        computing device.
     """
 
-    def __init__(self, n_node_feature: int) -> None:
+    def __init__(
+        self, n_node_feature: int, device: torch.device = torch.device("cpu")
+    ) -> None:
         super().__init__()
         self.n_node_feature = n_node_feature
+        self.device = device
 
     def forward(self, node_embedding: Tensor, nbr_idx: Tensor) -> Tensor:
         """
@@ -50,7 +55,7 @@ class GetNodeK(nn.Module):
             list_ = np.delete(list_, i)
             k_idx_list.append(list_)
         k_idx_list = np.array(k_idx_list)
-        k_idx_list = torch.tensor(k_idx_list)
+        k_idx_list = torch.tensor(k_idx_list).to(self.device)
         k_idx_list = k_idx_list.unsqueeze(0).expand(At, Nbr, Nbr - 1)
         k_idx_list = k_idx_list.unsqueeze(0).expand(B, At, Nbr, Nbr - 1)
         nbr_k = nbr_idx.unsqueeze(2).expand(B, At, Nbr, Nbr)
@@ -71,11 +76,16 @@ class GetEdgeK(nn.Module):
     ----------
     n_edge_feature : int
         dimension of the embedded edge features.
+    device : torch.device, default=torch.device("cpu")
+        computing device.
     """
 
-    def __init__(self, n_edge_feature: int) -> None:
+    def __init__(
+        self, n_edge_feature: int, device: torch.device = torch.device("cpu")
+    ) -> None:
         super().__init__()
         self.n_edge_feature = n_edge_feature
+        self.device = device
 
     def forward(self, edge_embedding: Tensor, nbr_idx: Tensor) -> Tensor:
         """
@@ -120,7 +130,7 @@ class GetEdgeK(nn.Module):
             list_ = np.delete(list_, i)
             k_idx_list.append(list_)
         k_idx_list = np.array(k_idx_list)
-        k_idx_list = torch.tensor(k_idx_list)
+        k_idx_list = torch.tensor(k_idx_list).to(self.device)
         k_idx_list = k_idx_list.unsqueeze(0).expand(At, Nbr, Nbr - 1)
         k_idx_list = k_idx_list.unsqueeze(0).expand(B, At, Nbr, Nbr - 1)
         nbr_k = nbr_idx.unsqueeze(2).expand(B, At, Nbr, Nbr)

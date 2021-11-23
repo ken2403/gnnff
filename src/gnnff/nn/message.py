@@ -104,16 +104,19 @@ class EdgeUpdate(nn.Module):
         dimension of the embedded node features.
     n_edge_feature : int
         dimension of the embedded edge features.
+    device : torch.device, default=torch.device("cpu")
+        computing device.
     """
 
     def __init__(
         self,
         n_node_feature: int,
         n_edge_feature: int,
+        device: torch.device = torch.device("cpu"),
     ) -> None:
         super().__init__()
-        self.get_node_k = GetNodeK(n_node_feature)
-        self.get_edge_k = GetEdgeK(n_edge_feature)
+        self.get_node_k = GetNodeK(n_node_feature, device)
+        self.get_edge_k = GetEdgeK(n_edge_feature, device)
         self.fc_two_body = Dense(n_node_feature, 2 * n_edge_feature, activation=None)
         # self.fc_three_body = Dense(
         #     3 * n_node_feature + 2 * n_edge_feature,
@@ -228,16 +231,19 @@ class MessagePassing(nn.Module):
         dimension of the embedded node features.
     n_edge_feature : int
         dimension of the embedded edge features.
+    device : torch.device, default=torch.device("cpu")
+        computing device.
     """
 
     def __init__(
         self,
         n_node_feature: int,
         n_edge_feature: int,
+        device: torch.device = torch.device("cpu"),
     ) -> None:
         super().__init__()
         self.update_node = NodeUpdate(n_node_feature, n_edge_feature)
-        self.update_edge = EdgeUpdate(n_node_feature, n_node_feature)
+        self.update_edge = EdgeUpdate(n_node_feature, n_node_feature, device)
 
     def forward(
         self,
