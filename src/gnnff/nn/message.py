@@ -29,9 +29,9 @@ class NodeUpdate(nn.Module):
         self.fc = Dense(
             n_node_feature + n_edge_feature, 2 * n_node_feature, activation=None
         )
+        self.bn1 = nn.BatchNorm1d(2 * n_node_feature)
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
-        self.bn1 = nn.BatchNorm1d(2 * n_node_feature)
         self.bn2 = nn.BatchNorm1d(n_node_feature)
 
     def forward(
@@ -115,25 +115,25 @@ class EdgeUpdate(nn.Module):
         device: torch.device = torch.device("cpu"),
     ) -> None:
         super().__init__()
-        self.get_node_k = GetNodeK(n_node_feature, device)
-        self.get_edge_k = GetEdgeK(n_edge_feature, device)
         self.fc_two_body = Dense(n_node_feature, 2 * n_edge_feature, activation=None)
+        self.bn_two_body = nn.BatchNorm1d(2 * n_edge_feature)
         # self.fc_three_body = Dense(
         #     3 * n_node_feature + 2 * n_edge_feature,
         #     2 * n_edge_feature,
         #     activation=None,
         # )
         # TODO: edge_jkをふくめる
+        self.get_node_k = GetNodeK(n_node_feature, device)
+        self.get_edge_k = GetEdgeK(n_edge_feature, device)
         self.fc_three_body = Dense(
             3 * n_node_feature + n_edge_feature,
             2 * n_edge_feature,
             activation=None,
         )
-        self.bn_two_body = nn.BatchNorm1d(2 * n_edge_feature)
         self.bn_three_body = nn.BatchNorm1d(2 * n_edge_feature)
-        self.bn_sum = nn.BatchNorm1d(n_edge_feature)
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
+        self.bn_sum = nn.BatchNorm1d(n_edge_feature)
 
     def forward(
         self,
