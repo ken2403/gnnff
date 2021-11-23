@@ -1,8 +1,8 @@
 import torch
 from torch import Tensor
 import torch.nn as nn
-from gnnff.nn import Dense
-from gnnff.nn import GetNodeK, GetEdgeK
+from gnnff.nn.base import Dense
+from gnnff.nn.neighbors import GetNodeK, GetEdgeK
 
 
 __all__ = ["NodeUpdate", "EdgeUpdate", "MessagePassing"]

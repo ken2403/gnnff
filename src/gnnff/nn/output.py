@@ -1,10 +1,14 @@
 import torch
 from torch import Tensor
 import torch.nn as nn
-from gnnff.nn import Dense
+from gnnff.nn.base import Dense
 
 
-__all__ = ["ForceMagnitudeMapping", "EnergyMapping"]
+__all__ = ["OutputModuleError", "ForceMagnitudeMapping", "EnergyMapping"]
+
+
+class OutputModuleError(Exception):
+    pass
 
 
 class ForceMagnitudeMapping(nn.Module):
@@ -20,10 +24,16 @@ class ForceMagnitudeMapping(nn.Module):
     activation : collable or None, default=torch.nn.functional.softplus
         activation function. All hidden layers would the same activation function
         except the output layer that does not apply any activation function.
+    property : str, default="forces"
+        name of the output property.
     """
 
     def __init__(
-        self, n_edge_feature: int, n_layers: int = 2, activation=nn.functional.softplus
+        self,
+        n_edge_feature: int,
+        n_layers: int = 2,
+        activation=nn.functional.softplus,
+        property: str = "forces",
     ) -> None:
         super().__init__()
         n_neurons_list = []
@@ -39,6 +49,7 @@ class ForceMagnitudeMapping(nn.Module):
         ]
         layers.append(Dense(n_neurons_list[-2], n_neurons_list[-1], activation=None))
         self.out_net = nn.Sequential(*layers)
+        self.property = property
 
     def forward(self, edge_embedding: Tensor) -> Tensor:
         """
@@ -55,10 +66,11 @@ class ForceMagnitudeMapping(nn.Module):
 
         Returns
         -------
-        torch.Tensor
-            force magnitude for each pair of neighboring atoms. (B x At x Nbr x 1) shape.
+        result : dict of torch.Tensor
+            containing force magnitude for each pair of neighboring atoms. (B x At x Nbr x 1) shape.
         """
-        return self.out_net(edge_embedding)
+        out = self.out_net(edge_embedding)
+        result = {self.property: out}
 
 
 class EnergyMapping(nn.Module):
@@ -69,7 +81,14 @@ class EnergyMapping(nn.Module):
     ----------
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        n_node_feature: int,
+        n_edeg_feature: int,
+        n_layers: int,
+        activation=nn.functional.softplus,
+        property: str = property,
+    ) -> None:
         super().__init__()
 
     def forward(self):

@@ -2,9 +2,10 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 from gnnff.data.keys import Keys
-from gnnff.nn import AtomicDistances
-from gnnff.nn import NodeEmbedding, EdgeEmbedding
-from gnnff.nn import MessagePassing
+
+# from gnnff.nn import AtomicDistances
+from gnnff.nn.embedding import NodeEmbedding, EdgeEmbedding
+from gnnff.nn.message import MessagePassing
 
 
 __all__ = ["GraphToFeatures"]
@@ -88,6 +89,8 @@ class GraphToFeatures(nn.Module):
 
         Returns
         -------
+        last_node_embedding : torch.Tensor
+            atomic node embedding tensors with (B x At x n_node_feature) shape.
         last_edge_embedding : torch.Tensor
             inter atomic edge embedding tensors with (B x At x Nbr x n_edge_feature) shape.
         2 lists of torch.Tensor
@@ -125,5 +128,5 @@ class GraphToFeatures(nn.Module):
                 edge_list.append(edge_embedding)
 
         if self.return_intermediate:
-            return edge_embedding, node_list, edge_list
-        return edge_embedding
+            return node_embedding, edge_embedding, node_list, edge_list
+        return node_embedding, edge_embedding
