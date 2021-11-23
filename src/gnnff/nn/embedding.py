@@ -44,7 +44,7 @@ class NodeEmbedding(nn.Embedding):
         return y
 
 
-def gaussian_filter(distances, offsets, widths, centered=True):
+def gaussian_filter(distances, offsets, widths, centered=False):
     """
     Filtered interatomic distance values using Gaussian functions.
 
@@ -61,7 +61,7 @@ def gaussian_filter(distances, offsets, widths, centered=True):
         offsets values of Gaussian functions.
     widths : torch.Tensor
         width values of Gaussian functions.
-    centered : bool, default=True
+    centered : bool, default=False
         If True, Gaussians are centered at the origin and the offsets are used
         to as their widths (used e.g. for angular functions).
 
@@ -104,7 +104,7 @@ class EdgeEmbedding(nn.Module):
         center of last Gaussian function, :math:`\mu_{N_g}`
     n_gaussians : int, default=100
         total number of Gaussian functions, :math:`N_g`.
-    centered : bool, default=True
+    centered : bool, default=False
         If False, Gaussian's centered values are varied at the offset values and the width value is constant.
     """
 
@@ -113,7 +113,7 @@ class EdgeEmbedding(nn.Module):
         start: float = 0.0,
         stop: float = 8.0,
         n_gaussian: int = 100,
-        centered: bool = True,
+        centered: bool = False,
     ) -> None:
         super().__init__()
         offsets = torch.linspace(start=start, end=stop, steps=n_gaussian)
