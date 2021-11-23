@@ -66,7 +66,7 @@ def get_trainer(args, model, train_loader, val_loader, metrics):
 
 def simple_loss_fn(args):
     def loss(batch, result):
-        diff = batch[args.property] - result[args.property]
+        diff = batch[args.predict_property] - result[args.predict_property]
         diff = diff ** 2
         err_sq = torch.mean(diff)
         return err_sq
