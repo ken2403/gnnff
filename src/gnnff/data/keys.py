@@ -4,6 +4,10 @@ __all__ = ["Keys"]
 class Keys:
     """
     Keys to access structure properties in `CrystalData` object.
+
+    References
+    ----------
+    .. [1] https://github.com/atomistic-machine-learning/schnetpack/blob/67226795af/src/schnetpack/__init__.py
     """
 
     # geometry
