@@ -2,9 +2,8 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 from gnnff.data.keys import Keys
-from gnnff.nn import output
 from gnnff.nn.gnn import GraphToFeatures
-from gnnff.nn.output import ForceMagnitudeMapping
+from gnnff.nn.output import OutputModuleError, ForceMagnitudeMapping, EnergyMapping
 
 
 class GNNFF(nn.Module):
@@ -28,6 +27,11 @@ class GNNFF(nn.Module):
     return_intermediate : bool, default=False
         if True, `forward` method also returns intermediate atomic representations
         after each message passing is applied.
+    output_activation : collable or None, default=torch.nn.functional.softplus
+        activation function for output layers. All hidden layers would the same activation function
+        except the last layer that does not apply any activation function.
+    property : str, default="forces"
+        name of the output property. Choose "forces" or "energy".
     n_output_layers : int, default=2
         number of output layers.
 
@@ -54,6 +58,8 @@ class GNNFF(nn.Module):
         gaussian_filter_end: float = None,
         share_weights: bool = False,
         return_intermediate: bool = False,
+        output_activation=nn.functional.softplus,
+        property: str = "forces",
         n_output_layers: int = 2,
     ) -> None:
         super().__init__()
@@ -69,7 +75,26 @@ class GNNFF(nn.Module):
             return_intermediate,
         )
         self.return_intermediate = return_intermediate
-        self.output_module = ForceMagnitudeMapping(n_edge_feature, n_output_layers)
+        self.property = property
+        if property == "forces":
+            self.output_module = ForceMagnitudeMapping(
+                n_edge_feature,
+                n_output_layers,
+                activation=output_activation,
+                property=property,
+            )
+        if property == "energy":
+            self.output_module = EnergyMapping(
+                n_node_feature,
+                n_edge_feature,
+                n_output_layers,
+                activation=output_activation,
+                property=property,
+            )
+        else:
+            raise OutputModuleError(
+                "Invalid property! Please set the property parameter from 'energy' or 'forces'."
+            )
 
     def forward(self, inputs: dict) -> Tensor:
         """
@@ -86,24 +111,36 @@ class GNNFF(nn.Module):
 
         Returns
         -------
-        predicted_forces : torch.Tensor
-            Predicted values of inter atomic forces with (B x At x 3) shape.
+        result : dict of torch.Tensor
+            dict of the predicted value of some property.
         2 lists of torch.Tensor
             intermediate node and edge embeddings, if return_intermediate=True was used.
         """
-        # from graph, calculating the force magnitude of each edge.
+        # from graph, calculating the inter atomic interaction
         if self.return_intermediate:
-            edge_embedding, node_list, edge_list = self.gnn(inputs)
+            node_embedding, edge_embedding, node_list, edge_list = self.gnn(inputs)
         else:
-            edge_embedding = self.gnn(inputs)
-        force_magnitude = self.output_module(edge_embedding)
+            node_embedding, edge_embedding = self.gnn(inputs)
+        # from node and edge, calculateing the propety magnitude
+        if self.property == "forces":
+            result = self.output_module(edge_embedding)
+        if self.property == "energy":
+            result = self.output_module(node_embedding, edge_embedding)
 
         # calculate inter atomic forces vector
-        force_magnitude = force_magnitude.expand(-1, -1, -1, 3)
-        unit_vecs = inputs[Keys.unit_vecs]
-        preditcted_forces = force_magnitude * unit_vecs
-        # summation of all neighbors effection
-        preditcted_forces = preditcted_forces.sum(dim=2)
+        if self.property == "forces":
+            force_magnitude = result[self.property]
+            force_magnitude = force_magnitude.expand(-1, -1, -1, 3)
+            unit_vecs = inputs[Keys.unit_vecs]
+            preditcted_forces = force_magnitude * unit_vecs
+            # summation of all neighbors effection
+            preditcted_forces = preditcted_forces.sum(dim=2)
+            result[self.property] = preditcted_forces
+        # calculate the total energy
+        if self.property == "energy":
+            # TODO: 原子で和を取る
+            energy_mapping = result[self.property]
+
         if self.return_intermediate:
-            return preditcted_forces, node_list, edge_list
-        return preditcted_forces
+            return result, node_list, edge_list
+        return result
