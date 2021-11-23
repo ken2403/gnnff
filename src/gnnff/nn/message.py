@@ -130,7 +130,7 @@ class EdgeUpdate(nn.Module):
         self.bn_three_body = nn.BatchNorm1d(2 * n_edge_feature)
         self.bn_sum = nn.BatchNorm1d(n_edge_feature)
         self.sigmoid = nn.Sigmoid()
-        self.tanh = nn.Tanh
+        self.tanh = nn.Tanh()
 
     def forward(
         self,
