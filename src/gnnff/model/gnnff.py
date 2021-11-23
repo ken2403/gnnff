@@ -50,7 +50,7 @@ class GNNFF(nn.Module):
         n_node_feature: int = 128,
         n_edge_feature: int = 128,
         n_message_passing: int = 3,
-        cutoff: float = 8.0,
+        cutoff: float = 6.0,
         gaussian_filter_end: float = None,
         share_weights: bool = False,
         return_intermediate: bool = False,

@@ -34,7 +34,9 @@ class NodeUpdate(nn.Module):
         self.bn1 = nn.BatchNorm1d(2 * n_node_feature)
         self.bn2 = nn.BatchNorm1d(n_node_feature)
 
-    def forward(self, node_embedding: Tensor, edge_embeding: Tensor) -> Tensor:
+    def forward(
+        self, node_embedding: Tensor, edge_embeding: Tensor, nbr_mask: Tensor
+    ) -> Tensor:
         """
         Calculate the updated node embedding.
 
@@ -48,11 +50,17 @@ class NodeUpdate(nn.Module):
             batch of node embedding tensor of (B x At x n_node_feature) shape.
         edge_embedding : torch.Tensor
             batch of edge embedding tensor of (B x At x Nbr x n_edge_feuture) shape.
+        nbr_mask : torch.Tensor
+            boolean mask for neighbor positions.(B x At x Nbr) of shape.
 
         Returns
         -------
         updated_node : torch.Tensor
             updated node embedding tensor of (B x At x n_node_feature) shape.
+
+        References
+        ----------
+        .. [1] https://github.com/ken2403/cgcnn/blob/master/cgcnn/model.py
         """
         B, At, Nbr, _ = edge_embeding.size()
         _, _, n_node_feature = node_embedding.size()
@@ -65,6 +73,8 @@ class NodeUpdate(nn.Module):
             ],
             dim=3,
         )
+        # apply neighbor mask and if there are no neighbor, padding with 0
+        c1[nbr_mask == 0] = 0.0
         # fully connected layter
         c1 = self.fc(c1)
         c1 = self.bn1(c1.view(-1, 2 * n_node_feature)).view(
@@ -80,7 +90,7 @@ class NodeUpdate(nn.Module):
             B, At, n_node_feature
         )
         # last activation layer
-        updated_node = self.tanh(nbr_sumed + node_embedding)
+        updated_node = self.tanh(node_embedding + nbr_sumed)
         return updated_node
 
 
@@ -110,14 +120,18 @@ class EdgeUpdate(nn.Module):
             2 * n_edge_feature,
             activation=None,
         )
-        self.bn_two_body = nn.BatchNorm1d(n_edge_feature)
+        self.bn_two_body = nn.BatchNorm1d(2 * n_edge_feature)
         self.bn_three_body = nn.BatchNorm1d(2 * n_edge_feature)
         self.bn_sum = nn.BatchNorm1d(n_edge_feature)
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh
 
     def forward(
-        self, node_embedding: Tensor, edge_embeding: Tensor, nbr_idx: Tensor
+        self,
+        node_embedding: Tensor,
+        edge_embedding: Tensor,
+        nbr_idx: Tensor,
+        nbr_mask: Tensor,
     ) -> Tensor:
         """
         Calculate the updated edge embedding.
@@ -134,13 +148,15 @@ class EdgeUpdate(nn.Module):
             batch of edge embedding tensor of (B x At x Nbr x n_edge_feuture) shape.
         nbr_idx : torch.Tensor
             Indices of neighbors of each atom. (B x At x Nbr) of shape.
+        nbr_mask : torch.Tensor
+            boolean mask for neighbor positions.(B x At x Nbr) of shape.
 
         Returns
         -------
         updated_edge : torch.Tensor
             updated edge embedding tensor of (B x At x Nbr x n_edge_feuture) shape.
         """
-        B, At, Nbr, n_edge_feature = edge_embeding.size()
+        B, At, Nbr, n_edge_feature = edge_embedding.size()
         _, _, n_node_feature = node_embedding.size()
 
         # make c2_ij tensor. (B x At x Nbr x n_node_feature) of shape.
@@ -150,6 +166,8 @@ class EdgeUpdate(nn.Module):
         node_j = torch.gather(node_embedding, dim=1, index=nbh)
         node_j = node_j.view(B, At, Nbr, -1)
         c2 = node_i * node_j
+        # apply neighbor mask and if there are no neighbor, padding with 0
+        c2[nbr_mask == 0] = 0.0
         # fully connected layter with c2
         c2 = self.fc_two_body(c2)
         c2 = self.bn_two_body(c2.view(-1, 2 * n_edge_feature)).view(
@@ -167,8 +185,8 @@ class EdgeUpdate(nn.Module):
         node_i = node_i.unsqueeze(3).expand(B, At, Nbr, Nbr_k, n_node_feature)
         node_j = node_j.unsqueeze(3).expand(B, At, Nbr, Nbr_k, n_node_feature)
         node_k = self.get_node_k(node_embedding, nbr_idx)
-        edge_ij = edge_embeding.unsqueeze(3).expand(B, At, Nbr, Nbr_k, n_edge_feature)
-        edge_kj = self.get_edge_k(edge_embeding, nbr_idx)
+        edge_ij = edge_embedding.unsqueeze(3).expand(B, At, Nbr, Nbr_k, n_edge_feature)
+        edge_kj = self.get_edge_k(edge_embedding, nbr_idx)
         c3 = torch.cat([node_i, node_j, node_k, edge_ij, edge_kj], dim=4)
         # fully connected layter with c3
         c3 = self.fc_three_body(c3)
@@ -187,7 +205,7 @@ class EdgeUpdate(nn.Module):
 
         # last activation layer
         updated_edge = self.tanh(
-            edge_embeding + two_body_embedding + three_body_embedding
+            edge_embedding + two_body_embedding + three_body_embedding
         )
         return updated_edge
 
@@ -214,7 +232,11 @@ class MessagePassing(nn.Module):
         self.update_edge = EdgeUpdate(n_node_feature, n_node_feature)
 
     def forward(
-        self, node_embedding: Tensor, edge_embeding: Tensor, nbr_idx: Tensor
+        self,
+        node_embedding: Tensor,
+        edge_embeding: Tensor,
+        nbr_idx: Tensor,
+        nbr_mask: Tensor,
     ) -> Tensor:
         """
         Calculate the updated node and edge embedding by message passing layer.
@@ -231,6 +253,7 @@ class MessagePassing(nn.Module):
             batch of edge embedding tensor of (B x At x Nbr x n_edge_feuture) shape.
         nbr_idx : torch.Tensor
             Indices of neighbors of each atom. (B x At x Nbr) of shape.
+        nbr_mask : torch.Tensor
 
         Returns
         -------
@@ -239,6 +262,6 @@ class MessagePassing(nn.Module):
         updated_edge : torch.Tensor
             updated edge embedding tensor of (B x At x Nbr x n_edge_feuture) shape.
         """
-        updated_node = self.update_node(node_embedding, edge_embeding)
-        updated_edge = self.update_edge(updated_node, edge_embeding, nbr_idx)
+        updated_node = self.update_node(node_embedding, edge_embeding, nbr_mask)
+        updated_edge = self.update_edge(updated_node, edge_embeding, nbr_idx, nbr_mask)
         return updated_node, updated_edge

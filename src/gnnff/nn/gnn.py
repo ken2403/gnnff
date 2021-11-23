@@ -36,13 +36,14 @@ class GraphToFeatures(nn.Module):
         n_node_feature: int,
         n_edge_feature: int,
         n_message_passing: int = 3,
-        gaussian_filter_end: float = 8.0,
+        gaussian_filter_end: float = 6.0,
         share_weights: bool = False,
         return_intermediate: bool = False,
     ) -> None:
         super().__init__()
         # layer for computing interatomic distances.
-        self.distances = AtomicDistances()
+        # self.distances = AtomicDistances()
+
         # layer for initial embedding of node and edge.
         self.initial_node_embedding = NodeEmbedding(n_node_feature)
         self.initial_edge_embedding = EdgeEmbedding(
@@ -95,14 +96,14 @@ class GraphToFeatures(nn.Module):
         # get tensors from input dictionary
         atomic_numbers = inputs[Keys.Z]
         nbr_idx = inputs[Keys.neighbors]
-        neighbor_mask = inputs[Keys.neighbor_mask]
+        nbr_mask = inputs[Keys.neighbor_mask]
         atom_mask = inputs[Keys.atom_mask]
 
         # get inter atomic distances
         r_ij = inputs[Keys.distances]
 
         # r_ij, unit_vecs = self.distances(
-        #     positions, nbr_idx, cell, cell_offset, neighbor_mask=neighbor_mask
+        #     positions, nbr_idx, cell, cell_offset, neighbor_mask=nbr_mask
         # )
 
         # get initial embedding
@@ -117,7 +118,7 @@ class GraphToFeatures(nn.Module):
         # message passing
         for message_passing in self.message_passings:
             node_embedding, edge_embedding = message_passing(
-                node_embedding, edge_embedding, nbr_idx
+                node_embedding, edge_embedding, nbr_idx, nbr_mask
             )
             if self.return_intermediate:
                 node_list.append(node_embedding)
