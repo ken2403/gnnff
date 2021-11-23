@@ -37,10 +37,10 @@ class Dense(nn.Linear):
         weight_init=xavier_uniform_,
         bias_init=constant_,
     ) -> None:
-        super().__init__(in_features, out_features, bias)
         self.activation = activation
         self.weight_init = weight_init
         self.bias_init = bias_init
+        super().__init__(in_features, out_features, bias)
 
     def reset_parameters(self) -> None:
         """
