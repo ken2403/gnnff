@@ -29,8 +29,12 @@ def main(args):
 
     # setup property metrics
     metrics = [
-        spk.train.metrics.MeanAbsoluteError(args.property, args.property),
-        spk.train.metrics.RootMeanSquaredError(args.property, args.property),
+        spk.train.metrics.MeanAbsoluteError(
+            args.predict_property, args.predict_property
+        ),
+        spk.train.metrics.RootMeanSquaredError(
+            args.predict_property, args.predict_property
+        ),
     ]
 
     # train or eval
@@ -45,7 +49,7 @@ def main(args):
             gaussian_filter_end=args.gaussian_filter_end,
             share_weights=args.share_weights,
             return_intermediate=args.return_intermediate,
-            property=args.property,
+            property=args.predict_property,
             n_output_layers=args.n_output_layers,
         )
 
@@ -59,9 +63,9 @@ def main(args):
         logging.info("...training done!")
 
 
-if __name__ == "__main":
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-a", "--argsjsonpath", help="json file path")
+    parser.add_argument("argsjsonpath", help="json file path")
     args = parser.parse_args()
     args = read_from_json(args.argsjsonpath)
 
