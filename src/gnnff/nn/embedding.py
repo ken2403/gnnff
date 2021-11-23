@@ -118,8 +118,8 @@ class EdgeEmbedding(nn.Module):
         super().__init__()
         offsets = torch.linspace(start=start, end=stop, steps=n_gaussian)
         widths = torch.FloatTensor((offsets[1] - offsets[0]) * torch.ones_like(offsets))
-        self.register_buffer = ("offsets", offsets)
-        self.register_buffer = ("widths", widths)
+        self.register_buffer("offset", offsets)
+        self.register_buffer("width", widths)
         self.centered = centered
 
     def forward(self, distances: Tensor) -> Tensor:
@@ -142,5 +142,5 @@ class EdgeEmbedding(nn.Module):
             filtered distances of (B x At x Nbr x G) shape.
         """
         return gaussian_filter(
-            distances, self.offsets, self.widths, centered=self.centered
+            distances, offsets=self.offset, widths=self.width, centered=self.centered
         )
