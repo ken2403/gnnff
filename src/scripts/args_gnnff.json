@@ -2,14 +2,15 @@
     "batch_size": 10,
     "checkpoint_interval": 1,
     "cuda": true,
-    "datapath": "/home/nishio/data/GaN.db",
+    "datapath": "/home/user/data/something.db",
     "keep_n_checkpoints": 3,
     "log_every_n_epochs": 1,
     "logger": "csv",
     "max_epochs": 5000,
     "mode": "train",
-    "modelpath": "/home/nishio/code/GaN_triple043/",
+    "modelpath": "/home/user/model_store/",
     "n_epochs": 1000,
+    "parallel": false,
     "seed": 2907679005,
     "split": [
         2800,
@@ -17,7 +18,6 @@
     ],
 
     "cutoff": 8.0,
-    "cutoff_function": "cosine",
     "gaussian_filter_end": null,
     "lr": 0.0001,
     "lr_decay": 0.8,
@@ -27,9 +27,9 @@
     "n_message_passing": 3,
     "n_node_feature": 128,
     "n_output_layers": 2,
-    "parallel": false,
     "predict_property": "forces",
-    "regularization": true,
+    "regularization": "l1",
     "regularization_lambda": 0.001,
+    "return_intermediate": false,
     "share_weights": false
 }
