@@ -1,8 +1,10 @@
 import torch
 from torch import Tensor
 import torch.nn as nn
+
 from gnnff.data.keys import Keys
 from gnnff.nn.gnn import GraphToFeatures
+from gnnff.nn.activation import shifted_softplus
 from gnnff.nn.output import OutputModuleError, ForceMagnitudeMapping, EnergyMapping
 
 
@@ -60,7 +62,7 @@ class GNNFF(nn.Module):
         gaussian_filter_end: float = None,
         share_weights: bool = False,
         return_intermediate: bool = False,
-        output_activation=nn.functional.softplus,
+        output_activation=shifted_softplus,
         property: str = "forces",
         n_output_layers: int = 2,
         device: torch.device = torch.device("cpu"),
