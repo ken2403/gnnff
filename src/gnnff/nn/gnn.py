@@ -54,7 +54,7 @@ class GraphToFeatures(nn.Module):
             start=0.0,
             stop=gaussian_filter_end,
             n_gaussian=n_edge_feature,
-            centered=True,
+            centered=False,
         )
         # layers for computing some message passing layers.
         if share_weights:
