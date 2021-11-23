@@ -1,20 +1,22 @@
 {
-    "batch_size": 10,
+    "batch_size": 1,
     "checkpoint_interval": 1,
-    "cuda": true,
-    "datapath": "/home/user/data/something.db",
+    "cuda": false,
+    "datapath": "../data/GaN.db",
     "keep_n_checkpoints": 3,
     "log_every_n_epochs": 1,
     "logger": "csv",
     "max_epochs": 5000,
+    "max_steps": null,
     "mode": "train",
-    "modelpath": "/home/user/model_store/",
-    "n_epochs": 1000,
+    "modelpath": "../test",
+    "n_epochs": 1,
     "parallel": false,
+    "return_intermediate": false,
     "seed": 2907679005,
     "split": [
-        2800,
-        700
+        10,
+        5
     ],
 
     "cutoff": 8.0,
@@ -30,6 +32,5 @@
     "predict_property": "forces",
     "regularization": "l1",
     "regularization_lambda": 0.001,
-    "return_intermediate": false,
     "share_weights": false
 }
