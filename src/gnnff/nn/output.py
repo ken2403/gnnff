@@ -71,6 +71,7 @@ class ForceMagnitudeMapping(nn.Module):
         """
         out = self.out_net(edge_embedding)
         result = {self.property: out}
+        return result
 
 
 class EnergyMapping(nn.Module):
