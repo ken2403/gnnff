@@ -1,6 +1,8 @@
+#!/usr/bin/env python
 import os
 import torch
 import logging
+import argparse
 import schnetpack as spk
 
 from gnnff.data.celldata import CellData
@@ -58,10 +60,9 @@ def main(args):
 
 
 if __name__ == "__main":
-    parser = build_parser()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-a", "--argsjsonpath", help="json file path")
     args = parser.parse_args()
-
-    if args.mode == "from_json":
-        args = read_from_json(args.jsonpath)
+    args = read_from_json(args.argsjsonpath)
 
     main(args)
