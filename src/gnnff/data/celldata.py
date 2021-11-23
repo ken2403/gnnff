@@ -205,7 +205,7 @@ def _get_nbr_info(atoms: ase.Atoms, cutoff: float):
     idx_i, idx_j, dist, dist_vecs, idx_S = neighbor_list(
         "ijdDS", atoms, cutoff=cutoff, self_interaction=False
     )
-
+    # TODO:もしbackwardがうまくいかない場合は、maskでneighborのないところは、距離を０ではなく１００にする
     if idx_i.shape[0] > 0:
         uidx, n_nbh = np.unique(idx_i, return_counts=True)
         n_max_nbh = np.max(n_nbh)
