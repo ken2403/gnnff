@@ -129,7 +129,7 @@ class EdgeEmbedding(nn.Module):
         B   :  Batch size
         At  :  Total number of atoms in the batch
         Nbr :  Total number of neighbors of each atom
-        G   :  Filtered features. (n_gaussian)
+        G   :  Filtered features (n_gaussian)
 
         Parameters
         ----------
