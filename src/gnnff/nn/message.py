@@ -244,7 +244,7 @@ class MessagePassing(nn.Module):
     ) -> None:
         super().__init__()
         self.update_node = NodeUpdate(n_node_feature, n_edge_feature)
-        self.update_edge = EdgeUpdate(n_node_feature, n_node_feature, device)
+        self.update_edge = EdgeUpdate(n_node_feature, n_edge_feature, device)
 
     def forward(
         self,
