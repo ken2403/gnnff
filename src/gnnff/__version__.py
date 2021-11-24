@@ -1,4 +1,4 @@
-__version_info__ = (0, 0, 3)
+__version_info__ = (0, 0, 4)
 __version__ = ".".join(map(str, __version_info__))
 
 """
@@ -9,4 +9,6 @@ __version__ = ".".join(map(str, __version_info__))
 - (0.0.3)
     - neighborのない箇所の距離を0に戻す(loaderとの差異をなくすため)
     - nbr_maskをupdated_edgeに適用することで学習の際の負担を減らす
+- (0.0.4)
+    - うまく学習できないので,　'nbr_maskをupdated_edgeに適用すること'　これをやめる
 """
