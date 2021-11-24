@@ -214,12 +214,11 @@ class EdgeUpdate(nn.Module):
             three_body_embedding.view(-1, n_edge_feature)
         ).view(B, At, Nbr, n_edge_feature)
 
-        # last activation layer
-        updated_edge = self.tanh(
-            edge_embedding + two_body_embedding + three_body_embedding
-        )
+        updated_edge = edge_embedding + two_body_embedding + three_body_embedding
         # apply neighbor mask and if there are no neighbor, padding with 0
         updated_edge[nbr_mask == 0] = 0.0
+        # last activation layer
+        updated_edge = self.tanh(updated_edge)
         return updated_edge
 
 
