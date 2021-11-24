@@ -55,7 +55,7 @@ def main(args):
         )
 
         # training
-        logging.info("setting training configurations...")
+        logging.info("setting up training...")
         trainer = get_trainer(args, model, train_loader, val_loader, metrics)
         logging.info("training...")
         trainer.train(
