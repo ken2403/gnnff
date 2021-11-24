@@ -218,6 +218,8 @@ class EdgeUpdate(nn.Module):
         updated_edge = self.tanh(
             edge_embedding + two_body_embedding + three_body_embedding
         )
+        # apply neighbor mask and if there are no neighbor, padding with 0
+        updated_edge[nbr_mask == 0] = 0.0
         return updated_edge
 
 
