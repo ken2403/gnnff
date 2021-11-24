@@ -206,7 +206,6 @@ def _get_nbr_info(atoms: ase.Atoms, cutoff: float):
     idx_i, idx_j, dist, dist_vecs, idx_S = neighbor_list(
         "ijdDS", atoms, cutoff=cutoff, self_interaction=False
     )
-    # TODO:もしbackwardがうまくいかない場合は、maskでneighborのないところは、距離を０ではなく１００にする
     if idx_i.shape[0] > 0:
         uidx, n_nbh = np.unique(idx_i, return_counts=True)
         n_max_nbh = np.max(n_nbh)
@@ -223,7 +222,8 @@ def _get_nbr_info(atoms: ase.Atoms, cutoff: float):
         offset = np.zeros((n_atoms, n_max_nbh, 3), dtype=np.float32)
         offset[mask] = idx_S
         # reshape distances to (At x Nbr) of shape
-        distances = np.zeros((n_atoms, n_max_nbh), dtype=np.float32)
+        # set the distances to 100 for parts without neighboring atoms.
+        distances = np.ones((n_atoms, n_max_nbh), dtype=np.float32) * 100
         distances[mask] = dist
         # reshape dist_vecs to (At x Nbr x 3) of shape, and normalize.
         unit_vecs = np.zeros((n_atoms, n_max_nbh, 3), dtype=np.float32)
@@ -233,7 +233,7 @@ def _get_nbr_info(atoms: ase.Atoms, cutoff: float):
 
     else:
         nbr_idx = np.zeros((n_atoms, 1), dtype=np.int32)
-        distances = np.zeros((n_atoms, 1), dtype=np.float32)
+        distances = np.ones((n_atoms, 1), dtype=np.float32) * 100
         unit_vecs = np.zeros((n_atoms, 1, 3), dtype=np.float32)
         offset = np.zeros((n_atoms, 1, 3), dtype=np.float32)
 
