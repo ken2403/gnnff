@@ -272,7 +272,7 @@ def _convert_atoms(atoms: ase.Atoms, cutoff: float, output: dict = None) -> dict
     positions = atoms.positions.astype(np.float32)
     positions -= _get_center_of_gravity(atoms)
     outputs[Keys.R] = positions
-    outputs[Keys.n_atoms] = np.array(atoms.get_global_number_of_atoms()).astype(
+    outputs[Keys.n_atoms] = np.array([atoms.get_global_number_of_atoms()]).astype(
         np.int32
     )
 
