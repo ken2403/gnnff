@@ -119,6 +119,8 @@ class GraphToFeatures(nn.Module):
         # get initial embedding
         node_embedding = self.initial_node_embedding(atomic_numbers)
         edge_embedding = self.initial_edge_embedding(r_ij)
+        # apply neighbor mask and if there are no neighbor, padding with 0
+        edge_embedding[nbr_mask == 0] = 0.0
 
         # store inter mediate values
         if self.return_intermediate:
