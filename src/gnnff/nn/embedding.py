@@ -100,7 +100,7 @@ class EdgeEmbedding(nn.Module):
     ----------
     start : float, default=0.0
         center of first Gaussian function, :math:`\mu_0`.
-    stop : float, default=8.0
+    stop : float, default=6.0
         center of last Gaussian function, :math:`\mu_{N_g}`
     n_gaussians : int, default=100
         total number of Gaussian functions, :math:`N_g`.
@@ -111,7 +111,7 @@ class EdgeEmbedding(nn.Module):
     def __init__(
         self,
         start: float = 0.0,
-        stop: float = 8.0,
+        stop: float = 6.0,
         n_gaussian: int = 100,
         centered: bool = False,
     ) -> None:
