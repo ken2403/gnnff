@@ -10,7 +10,7 @@ from gnnff.nn.output import OutputModuleError, ForceMagnitudeMapping, EnergyMapp
 
 class GNNFF(nn.Module):
     """
-    GNNFF architecture for learning inter atomic interactions of atomistic systems and predict the inter atomic forces.
+    GNNFF architecture for learning inter atomic interactions of atomistic systems and predict some property.
 
     Attributes
     ----------
