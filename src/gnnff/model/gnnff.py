@@ -108,10 +108,6 @@ class GNNFF(nn.Module):
         """
         Forward gnn output through output_module.
 
-        B   :  Batch size
-        At  :  Total number of atoms in the batch
-        Nbr :  Total number of neighbors of each atom
-
         Parameters
         ----------
         inputs : dict of torch.Tensor
