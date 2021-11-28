@@ -7,9 +7,10 @@ import schnetpack as spk
 
 from gnnff.data.celldata import CellData
 from gnnff.model.gnnff import GNNFF
+from gnnff.utils.evaluation import evaluate
 from gnnff.utils.data import get_loader
 from gnnff.utils.training import get_trainer
-from gnnff.utils.script_utils import build_parser, read_from_json
+from gnnff.utils.script_utils import ScriptError, read_from_json
 
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
@@ -62,6 +63,35 @@ def main(args):
             device, n_epochs=args.n_epochs, lambda_=args.regularization_lambda
         )
         logging.info("...training done!")
+
+    # train or eval
+    if args.mode == "eval":
+
+        # remove old evaluation files
+        evaluation_fp = os.path.join(args.modelpath, "evaluation.txt")
+
+        # load model
+        logging.info("loading trained model...")
+        model = torch.load(
+            os.path.join(args.modelpath, "best_model"), map_location=device
+        )
+
+        # run evaluation
+        logging.info("evaluating...")
+        with torch.no_grad():
+            evaluate(
+                args,
+                model,
+                train_loader,
+                val_loader,
+                test_loader,
+                device,
+                metrics=metrics,
+            )
+        logging.info("... evaluation done!")
+
+    else:
+        raise ScriptError("Unknown mode: {}".format(args.mode))
 
 
 if __name__ == "__main__":
