@@ -122,7 +122,7 @@ class GNNFF(nn.Module):
         result : dict of torch.Tensor
             dict of the predicted value of some property.
         2 lists of torch.Tensor
-            intermediate node and edge embeddings, if return_intermediate=True was used.
+            intermediate node and edge embeddings, if 'return_intermediate=True' was used.
         """
         # from graph, calculating the inter atomic interaction
         if self.return_intermediate:
