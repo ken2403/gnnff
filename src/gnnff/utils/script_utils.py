@@ -1,14 +1,8 @@
 import json
-import logging
 from argparse import Namespace
 
 
-__all__ = ["build_parser", "read_from_json"]
-
-
-def build_parser():
-    """ """
-    return None
+__all__ = ["read_from_json"]
 
 
 def read_from_json(jsonpath: str) -> Namespace:
