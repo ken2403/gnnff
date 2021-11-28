@@ -1,0 +1,16 @@
+{
+    "batch_size": 5,
+    "cuda": false,
+    "cutoff": 6.0,
+    "datapath": "~/data/GaN.db",
+    "eval_data" : [
+        "train",
+        "validation",
+        "test"
+    ],
+    "mode": "train",
+    "modelpath": "~/model_directory/",
+    "parallel": false,
+    "predict_property" : "forces",
+    "return_intermid" : true
+}

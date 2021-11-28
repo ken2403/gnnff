@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import torch
+import torch.nn as nn
 import logging
 import argparse
 import schnetpack as spk
@@ -10,7 +11,7 @@ from gnnff.model.gnnff import GNNFF
 from gnnff.utils.evaluation import evaluate
 from gnnff.utils.data import get_loader
 from gnnff.utils.training import get_trainer
-from gnnff.utils.script_utils import ScriptError, read_from_json
+from gnnff.utils.script_utils import ScriptError, count_params, read_from_json
 
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
@@ -54,6 +55,11 @@ def main(args):
             n_output_layers=args.n_output_layers,
             device=device,
         )
+        if args.parallel:
+            model = nn.DataParallel(model)
+        logging.info(
+            "The model you built has: {} parameters".format(count_params(model))
+        )
 
         # training
         logging.info("setting up training...")
@@ -69,6 +75,8 @@ def main(args):
 
         # remove old evaluation files
         evaluation_fp = os.path.join(args.modelpath, "evaluation.txt")
+        if os.path.exists(evaluation_fp):
+            os.remove(evaluation_fp)
 
         # load model
         logging.info("loading trained model...")
