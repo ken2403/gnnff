@@ -268,9 +268,9 @@ def _convert_atoms(atoms: ase.Atoms, cutoff: float, output: dict = None) -> dict
 
     # Elemental composition
     outputs[Keys.Z] = atoms.numbers.astype(np.int32)
-    positions = atoms.positions.astype(np.float32)
-    positions -= _get_center_of_gravity(atoms)
-    outputs[Keys.R] = positions
+    # positions = atoms.positions.astype(np.float32)
+    # positions -= _get_center_of_gravity(atoms)
+    # outputs[Keys.R] = positions
     outputs[Keys.n_atoms] = np.array([atoms.get_global_number_of_atoms()]).astype(
         np.int32
     )
@@ -282,8 +282,8 @@ def _convert_atoms(atoms: ase.Atoms, cutoff: float, output: dict = None) -> dict
     outputs[Keys.neighbors] = nbh_idx.astype(np.int32)
 
     # Get cells
-    outputs[Keys.cell] = np.array(atoms.cell.array, dtype=np.float32)
-    outputs[Keys.cell_offset] = offsets.astype(np.float32)
+    # outputs[Keys.cell] = np.array(atoms.cell.array, dtype=np.float32)
+    # outputs[Keys.cell_offset] = offsets.astype(np.float32)
 
     # Get distances
     outputs[Keys.distances] = distances.astype(np.float32)
