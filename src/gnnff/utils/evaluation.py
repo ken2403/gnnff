@@ -13,15 +13,17 @@ def evaluate(
     test_loader,
     device,
     metrics,
-    custom_header=None,
 ):
 
     header = []
     results = []
 
     loaders = dict(train=train_loader, validation=val_loader, test=test_loader)
-    for datasplit in args.split:
-        header += ["{} MAE".format(datasplit), "{} RMSE".format(datasplit)]
+    for datasplit in args.eval_data:
+        header += [
+            "{} MAE".format(datasplit, args.predict_property),
+            "{} RMSE".format(datasplit, args.predict_property),
+        ]
         if args.parallel:
             model.to(f"cuda:{model.device_ids[0]}")
 
@@ -34,18 +36,8 @@ def evaluate(
                 new_state_dict[k] = v
             model.load_state_dict(new_state_dict)
             device = f"cuda:{model.device_ids[0]}"
-            derivative = model.module.output_modules[0].derivative
-        if not args.parallel:
-            derivative = model.output_modules[0].derivative
-        if derivative is not None:
-            header += [
-                "{} MAE ({})".format(datasplit, derivative),
-                "{} RMSE ({})".format(datasplit, derivative),
-            ]
-        results += evaluate_dataset(metrics, model, loaders[datasplit], device)
 
-    if custom_header:
-        header = custom_header
+        results += evaluate_dataset(metrics, model, loaders[datasplit], device)
 
     eval_file = os.path.join(args.modelpath, "evaluation.txt")
     with open(eval_file, "w") as file:
