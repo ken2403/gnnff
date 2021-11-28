@@ -48,7 +48,7 @@ def main(args):
             cutoff=args.cutoff,
             gaussian_filter_end=args.gaussian_filter_end,
             share_weights=args.share_weights,
-            return_intermediate=args.return_intermediate,
+            return_intermediate=False,
             property=args.predict_property,
             n_output_layers=args.n_output_layers,
             device=device,

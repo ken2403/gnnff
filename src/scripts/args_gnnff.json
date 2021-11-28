@@ -12,7 +12,6 @@
     "modelpath": "~/model_directory/",
     "n_epochs": 1,
     "parallel": false,
-    "return_intermediate": false,
     "seed": 2907679005,
     "split": [
         1000,
