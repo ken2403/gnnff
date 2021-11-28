@@ -1,8 +1,15 @@
 import json
 from argparse import Namespace
+from logging import exception
+
+from torch._C import ScriptFunction
 
 
-__all__ = ["read_from_json"]
+__all__ = ["ScriptError", "read_from_json"]
+
+
+class ScriptError(Exception):
+    pass
 
 
 def read_from_json(jsonpath: str) -> Namespace:
