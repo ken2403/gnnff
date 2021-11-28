@@ -23,7 +23,7 @@ class GraphToFeatures(nn.Module):
         dimension of the embedded edge features.
     n_message_passing : int, default=3
         number of message passing layers.
-    gaussian_filter_end : float, default=8.0
+    gaussian_filter_end : float, default=6.0
         center of last Gaussian function.
     share_weights : bool, default=False
         if True, share the weights across all message passing layers.
@@ -84,6 +84,7 @@ class GraphToFeatures(nn.Module):
 
     def forward(self, inputs: dict) -> Tensor:
         """
+        Compute initial embedding and repeated message passings.
 
         B   :  Batch size
         At  :  Total number of atoms in the batch
@@ -91,7 +92,7 @@ class GraphToFeatures(nn.Module):
 
         Parameters
         ----------
-        inputs : dict of torch.Tenso
+        inputs : dict of torch.Tensor
             dictionary of property tensors in unit cell.
 
         Returns
