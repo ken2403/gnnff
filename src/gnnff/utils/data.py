@@ -12,6 +12,13 @@ __all__ = ["get_loader"]
 
 def get_loader(dataset, args):
     """
+    Parameters
+    ----------
+    dataset : gnnff.data.Celldata
+        dataset of cell.
+    args : Namespace
+        Namespace dict.
+
     Returns
     -------
     train_data, val_loader, test_loader : torch.utils.data.DataLoader

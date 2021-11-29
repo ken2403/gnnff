@@ -106,7 +106,7 @@ class GNNFF(nn.Module):
 
     def forward(self, inputs: dict) -> Tensor:
         """
-        Forward gnn output through output_module.
+        Forward GNNFF output through output_module.
 
         Parameters
         ----------
