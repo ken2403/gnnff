@@ -96,7 +96,7 @@ class GNNFF(nn.Module):
                 activation=output_activation,
                 property=property,
             )
-        elif property != "forces" and property != "energy":
+        else:
             raise OutputModuleError(
                 "Invalid property ({})! Please set the property parameter from 'energy' or 'forces'.".format(
                     property
@@ -128,7 +128,7 @@ class GNNFF(nn.Module):
         # from node and edge, calculateing the propety magnitude
         if self.property == "forces":
             result = self.output_module(edge_embedding)
-        if self.property == "energy":
+        elif self.property == "energy":
             result = self.output_module(node_embedding, edge_embedding)
 
         # calculate inter atomic forces vector
@@ -141,7 +141,7 @@ class GNNFF(nn.Module):
             preditcted_forces = preditcted_forces.sum(dim=2)
             result[self.property] = preditcted_forces
         # calculate the total energy
-        if self.property == "energy":
+        elif self.property == "energy":
             # TODO: 原子で和を取る
             energy_mapping = result[self.property]
 

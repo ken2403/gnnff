@@ -71,7 +71,7 @@ def main(args):
         logging.info("...training done!")
 
     # train or eval
-    if args.mode == "eval":
+    elif args.mode == "eval":
 
         # remove old evaluation files
         evaluation_fp = os.path.join(args.modelpath, "evaluation.txt")
