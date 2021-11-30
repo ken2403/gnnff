@@ -28,7 +28,7 @@
     "n_message_passing": 3,
     "n_node_feature": 50,
     "n_output_layers": 2,
-    "predict_property": "forces",
+    "predict_property": {"forces": "forces"},
     "regularization": "l1",
     "regularization_lambda": 0.01,
     "share_weights": false
