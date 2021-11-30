@@ -207,6 +207,7 @@ class Trainer:
                 train_iter = self.train_loader
 
                 self._model.train()
+                scaler = torch.cuda.amp.GradScaler()
                 for train_batch in train_iter:
                     self.optimizer.zero_grad()
 
@@ -214,10 +215,14 @@ class Trainer:
                         h.on_batch_begin(self, train_batch)
 
                     # move input to gpu, if needed
-                    train_batch = {k: v.to(device) for k, v in train_batch.items()}
+                    train_batch = {
+                        k: v.to(device, non_blocking=True)
+                        for k, v in train_batch.items()
+                    }
 
-                    result = self._model(train_batch)
-                    loss = self.loss_fn(train_batch, result)
+                    with torch.cuda.amp.autocast():
+                        result = self._model(train_batch)
+                        loss = self.loss_fn(train_batch, result)
                     # regularization
                     if self.regularization is not None:
                         reg = torch.tensor(0.0, requires_grad=True)
@@ -228,8 +233,12 @@ class Trainer:
                                 if self.regularization == "l2":
                                     reg = reg + torch.norm(param, 1) ** 2
                         loss = loss + lambda_ * reg
-                    loss.backward()
-                    self.optimizer.step()
+                    # Scales loss.  Calls backward() on scaled loss to create scaled gradients.
+                    scaler.scale(loss).backward()
+                    # scaler.step() first unscales the gradients of the optimizer's assigned params.
+                    scaler.step(self.optimizer)
+                    # Updates the scale for next iteration.
+                    scaler.update()
                     self.step += 1
 
                     for h in self.hooks:
@@ -258,7 +267,10 @@ class Trainer:
                             h.on_validation_batch_begin(self)
 
                         # move input to gpu, if needed
-                        val_batch = {k: v.to(device) for k, v in val_batch.items()}
+                        val_batch = {
+                            k: v.to(device, non_blocking=True)
+                            for k, v in val_batch.items()
+                        }
 
                         val_result = self._model(val_batch)
                         val_batch_loss = (

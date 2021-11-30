@@ -64,6 +64,7 @@ def main(args):
         logging.info("setting up training...")
         trainer = get_trainer(args, model, train_loader, val_loader, metrics)
         logging.info("training...")
+        torch.backends.cudnn.benchmark = True
         trainer.train(
             device, n_epochs=args.n_epochs, lambda_=args.regularization_lambda
         )
