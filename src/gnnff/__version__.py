@@ -15,4 +15,5 @@ __version__ = ".".join(map(str, __version_info__))
     - batchnorm を減らす
     - 毎回のmessageにresidual netを追加
     - gnnffで力とエネルギーを同時に学習できるようにレイアウトを変更
+    - training時のtensor計算の最適化
 """
