@@ -1,9 +1,7 @@
-import torch
 from torch import Tensor
 import torch.nn as nn
-from gnnff.data.keys import Keys
 
-# from gnnff.nn import AtomicDistances
+from gnnff.data.keys import Keys
 from gnnff.nn.embedding import NodeEmbedding, EdgeEmbedding
 from gnnff.nn.message import MessagePassing
 
@@ -42,9 +40,6 @@ class GraphToFeatures(nn.Module):
         return_intermediate: bool = False,
     ) -> None:
         super().__init__()
-        # layer for computing interatomic distances.
-        # self.distances = AtomicDistances()
-
         # layer for initial embedding of node and edge.
         self.initial_node_embedding = NodeEmbedding(n_node_feature)
         self.initial_edge_embedding = EdgeEmbedding(
@@ -105,17 +100,13 @@ class GraphToFeatures(nn.Module):
         nbr_mask = inputs[Keys.neighbor_mask]
         # atom_mask = inputs[Keys.atom_mask]
 
-        # get inter atomic distances
+        # get inter atomic distances. (B x At x Nbr) of shape.
         r_ij = inputs[Keys.distances]
-
-        # r_ij, unit_vecs = self.distances(
-        #     positions, nbr_idx, cell, cell_offset, neighbor_mask=nbr_mask
-        # )
 
         # get initial embedding
         node_embedding = self.initial_node_embedding(atomic_numbers)
         edge_embedding = self.initial_edge_embedding(r_ij)
-        # apply neighbor mask and if there are no neighbor, padding with 0
+        # apply neighbor mask, if there are no neighbor, padding with 0
         edge_embedding[nbr_mask == 0] = 0.0
 
         # store inter mediate values
