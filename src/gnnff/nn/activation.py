@@ -6,7 +6,6 @@ import torch.nn.functional as F
 __all__ = ["softplus", "shifted_softplus"]
 
 
-@torch.jit.script
 def softplus(x: Tensor) -> Tensor:
     """
     Compute shifted soft-plus activation function.
@@ -26,7 +25,6 @@ def softplus(x: Tensor) -> Tensor:
     return F.softplus(x)
 
 
-@torch.jit.script
 def shifted_softplus(x: Tensor) -> Tensor:
     """
     Compute shifted soft-plus activation function.
