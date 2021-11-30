@@ -29,10 +29,10 @@ class NodeUpdate(nn.Module):
         self.fc = Dense(
             n_node_feature + n_edge_feature, 2 * n_node_feature, activation=None
         )
-        self.bn1 = nn.BatchNorm1d(2 * n_node_feature)
+        # self.bn1 = nn.BatchNorm1d(2 * n_node_feature)
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
-        self.bn2 = nn.BatchNorm1d(n_node_feature)
+        self.bn = nn.BatchNorm1d(n_node_feature)
 
     def forward(
         self, node_embedding: Tensor, edge_embeding: Tensor, nbr_mask: Tensor
@@ -73,20 +73,20 @@ class NodeUpdate(nn.Module):
             ],
             dim=3,
         )
-        # apply neighbor mask and if there are no neighbor, padding with 0
+        # apply neighbor mask, if there are no neighbor, padding with 0
         c1[nbr_mask == 0] = 0.0
         # fully connected layter
         c1 = self.fc(c1)
-        c1 = self.bn1(c1.view(-1, 2 * n_node_feature)).view(
-            B, At, Nbr, 2 * n_node_feature
-        )
+        # c1 = self.bn1(c1.view(-1, 2 * n_node_feature)).view(
+        #     B, At, Nbr, 2 * n_node_feature
+        # )
         # calculate the gate and extract features
         nbr_gate, nbr_extract = c1.chunk(2, dim=3)
         nbr_gate = self.sigmoid(nbr_gate)
         nbr_extract = self.tanh(nbr_extract)
         # elemet-wise multiplication with gate
         nbr_sumed = torch.sum(nbr_gate * nbr_extract, dim=2)
-        nbr_sumed = self.bn2(nbr_sumed.view(-1, n_node_feature)).view(
+        nbr_sumed = self.bn(nbr_sumed.view(-1, n_node_feature)).view(
             B, At, n_node_feature
         )
         # last activation layer
@@ -113,7 +113,7 @@ class EdgeUpdate(nn.Module):
     ) -> None:
         super().__init__()
         self.fc_two_body = Dense(n_node_feature, 2 * n_edge_feature, activation=None)
-        self.bn_two_body = nn.BatchNorm1d(2 * n_edge_feature)
+        self.bn_two_body = nn.BatchNorm1d(n_edge_feature)
         # TODO: edge_jkをふくめる
         self.get_node_k = GetNodeK(n_node_feature)
         self.get_edge_k = GetEdgeK(n_edge_feature)
@@ -127,10 +127,10 @@ class EdgeUpdate(nn.Module):
             2 * n_edge_feature,
             activation=None,
         )
-        self.bn_three_body = nn.BatchNorm1d(2 * n_edge_feature)
+        # self.bn_three_body = nn.BatchNorm1d(2 * n_edge_feature)
         self.sigmoid = nn.Sigmoid()
         self.tanh = nn.Tanh()
-        self.bn_sum = nn.BatchNorm1d(n_edge_feature)
+        self.bn_three_body = nn.BatchNorm1d(n_edge_feature)
 
     def forward(
         self,
@@ -172,19 +172,22 @@ class EdgeUpdate(nn.Module):
         node_j = torch.gather(node_embedding, dim=1, index=nbh)
         node_j = node_j.view(B, At, Nbr, -1)
         c2 = node_i * node_j
-        # apply neighbor mask and if there are no neighbor, padding with 0
+        # apply neighbor mask, if there are no neighbor, padding with 0
         c2[nbr_mask == 0] = 0.0
         # fully connected layter with c2
         c2 = self.fc_two_body(c2)
-        c2 = self.bn_two_body(c2.view(-1, 2 * n_edge_feature)).view(
-            B, At, Nbr, 2 * n_edge_feature
-        )
+        # c2 = self.bn_two_body(c2.view(-1, 2 * n_edge_feature)).view(
+        #     B, At, Nbr, 2 * n_edge_feature
+        # )
         # calculate the gate and extract features with two-body interaction
         two_body_gate, two_body_extract = c2.chunk(2, dim=3)
         two_body_gate = self.sigmoid(two_body_gate)
         two_body_extract = self.tanh(two_body_extract)
         # elemet-wise multiplication with gate on two-body interaction
         two_body_embedding = two_body_gate * two_body_extract
+        two_body_embedding = self.bn_two_body(
+            two_body_embedding.view(-1, n_edge_feature)
+        ).view(B, At, Nbr, n_edge_feature)
 
         # make c3_ijk tensor. (B x At x Nbr x Nbr_k x 3*n_node_feature + 2*n_edge_feature) of shape.
         Nbr_k = Nbr - 1
@@ -198,16 +201,16 @@ class EdgeUpdate(nn.Module):
         c3 = torch.cat([node_i, node_j, node_k, edge_ij], dim=4)
         # fully connected layter with c3
         c3 = self.fc_three_body(c3)
-        c3 = self.bn_three_body(c3.view(-1, 2 * n_edge_feature)).view(
-            B, At, Nbr, Nbr_k, 2 * n_edge_feature
-        )
+        # c3 = self.bn_three_body(c3.view(-1, 2 * n_edge_feature)).view(
+        #     B, At, Nbr, Nbr_k, 2 * n_edge_feature
+        # )
         # calculate the gate and extract features with three-body interaction
         three_body_gate, three_body_extract = c3.chunk(2, dim=4)
         three_body_gate = self.sigmoid(three_body_gate)
         three_body_extract = self.tanh(three_body_extract)
         # elemet-wise multiplication with gate on three-body interaction
         three_body_embedding = torch.sum(three_body_gate * three_body_extract, dim=3)
-        three_body_embedding = self.bn_sum(
+        three_body_embedding = self.bn_three_body(
             three_body_embedding.view(-1, n_edge_feature)
         ).view(B, At, Nbr, n_edge_feature)
 
@@ -228,19 +231,16 @@ class MessagePassing(nn.Module):
         dimension of the embedded node features.
     n_edge_feature : int
         dimension of the embedded edge features.
-    device : torch.device, default=torch.device("cpu")
-        computing device.
     """
 
     def __init__(
         self,
         n_node_feature: int,
         n_edge_feature: int,
-        device: torch.device = torch.device("cpu"),
     ) -> None:
         super().__init__()
         self.update_node = NodeUpdate(n_node_feature, n_edge_feature)
-        self.update_edge = EdgeUpdate(n_node_feature, n_edge_feature, device)
+        self.update_edge = EdgeUpdate(n_node_feature, n_edge_feature)
 
     def forward(
         self,
@@ -274,5 +274,11 @@ class MessagePassing(nn.Module):
             updated edge embedding tensor of (B x At x Nbr x n_edge_feuture) shape.
         """
         updated_node = self.update_node(node_embedding, edge_embeding, nbr_mask)
+        # Residual Net for node_embedding
+        updated_node = updated_node + node_embedding
+
         updated_edge = self.update_edge(updated_node, edge_embeding, nbr_idx, nbr_mask)
+        # Residual Net for edeg_embedding
+        updated_edge = updated_edge + edge_embeding
+
         return updated_node, updated_edge
