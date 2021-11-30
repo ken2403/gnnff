@@ -30,8 +30,6 @@ class GraphToFeatures(nn.Module):
     return_intermediate : bool, default=False
         if True, `forward` method also returns intermediate atomic representations
         after each message passing is applied.
-    device : torch.device, default=torch.device("cpu")
-        computing device.
     """
 
     def __init__(
@@ -42,7 +40,6 @@ class GraphToFeatures(nn.Module):
         gaussian_filter_end: float = 6.0,
         share_weights: bool = False,
         return_intermediate: bool = False,
-        device: torch.device = torch.device("cpu"),
     ) -> None:
         super().__init__()
         # layer for computing interatomic distances.
@@ -63,7 +60,6 @@ class GraphToFeatures(nn.Module):
                     MessagePassing(
                         n_node_feature=n_node_feature,
                         n_edge_feature=n_edge_feature,
-                        device=device,
                     )
                 ]
                 * n_message_passing
@@ -74,7 +70,6 @@ class GraphToFeatures(nn.Module):
                     MessagePassing(
                         n_node_feature=n_node_feature,
                         n_edge_feature=n_edge_feature,
-                        device=device,
                     )
                     for _ in range(n_message_passing)
                 ]

@@ -36,8 +36,6 @@ class GNNFF(nn.Module):
         name of the output property. Choose "forces" or "energy".
     n_output_layers : int, default=2
         number of output layers.
-    device : torch.device, default=torch.device("cpu")
-        computing device.
 
     Referrences
     -----------
@@ -65,7 +63,6 @@ class GNNFF(nn.Module):
         output_activation=shifted_softplus,
         property: str = "forces",
         n_output_layers: int = 2,
-        device: torch.device = torch.device("cpu"),
     ) -> None:
         super().__init__()
         # implementation of gaussian_filter_end (ref: [3])
@@ -78,7 +75,6 @@ class GNNFF(nn.Module):
             gaussian_filter_end,
             share_weights,
             return_intermediate,
-            device=device,
         )
         self.return_intermediate = return_intermediate
         if property == "forces":

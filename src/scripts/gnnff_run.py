@@ -53,7 +53,6 @@ def main(args):
             return_intermediate=False,
             property=args.predict_property,
             n_output_layers=args.n_output_layers,
-            device=device,
         )
         if args.parallel:
             model = nn.DataParallel(model)

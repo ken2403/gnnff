@@ -15,16 +15,11 @@ class GetNodeK(nn.Module):
     ----------
     n_node_feature : int
         dimension of the embedded node features.
-    device : torch.device, default=torch.device("cpu")
-        computing device.
     """
 
-    def __init__(
-        self, n_node_feature: int, device: torch.device = torch.device("cpu")
-    ) -> None:
+    def __init__(self, n_node_feature: int) -> None:
         super().__init__()
         self.n_node_feature = n_node_feature
-        self.device = device
 
     def forward(self, node_embedding: Tensor, nbr_idx: Tensor) -> Tensor:
         """
@@ -48,6 +43,7 @@ class GetNodeK(nn.Module):
             node embedding of third atom. (B x At x Nbr x Nbr-1 x n_node_feature)
         """
         B, At, Nbr = nbr_idx.size()
+        device = nbr_idx.device
         # make index list of atom k
         k_idx_list = []
         for i in range(Nbr):
@@ -55,7 +51,7 @@ class GetNodeK(nn.Module):
             list_ = np.delete(list_, i)
             k_idx_list.append(list_)
         k_idx_list = np.array(k_idx_list)
-        k_idx_list = torch.tensor(k_idx_list).to(self.device)
+        k_idx_list = torch.tensor(k_idx_list).to(device)
         k_idx_list = k_idx_list.unsqueeze(0).expand(At, Nbr, Nbr - 1)
         k_idx_list = k_idx_list.unsqueeze(0).expand(B, At, Nbr, Nbr - 1)
         nbr_k = nbr_idx.unsqueeze(2).expand(B, At, Nbr, Nbr)
@@ -80,12 +76,9 @@ class GetEdgeK(nn.Module):
         computing device.
     """
 
-    def __init__(
-        self, n_edge_feature: int, device: torch.device = torch.device("cpu")
-    ) -> None:
+    def __init__(self, n_edge_feature: int) -> None:
         super().__init__()
         self.n_edge_feature = n_edge_feature
-        self.device = device
 
     def forward(self, edge_embedding: Tensor, nbr_idx: Tensor) -> Tensor:
         """
@@ -109,6 +102,7 @@ class GetEdgeK(nn.Module):
             node embedding of third atom. (B x At x Nbr x Nbr-1 x n_edge_feature)
         """
         B, At, Nbr = nbr_idx.size()
+        device = nbr_idx.device
 
         # expande edge_embdding, (B x At x Nbr x n_edge_featutre)->(B x At x Nbr x Nbr x n_edge_feature)
         nbr_idx_edge = nbr_idx.unsqueeze(3).expand(B, At, Nbr, self.n_edge_feature)
@@ -130,7 +124,7 @@ class GetEdgeK(nn.Module):
             list_ = np.delete(list_, i)
             k_idx_list.append(list_)
         k_idx_list = np.array(k_idx_list)
-        k_idx_list = torch.tensor(k_idx_list).to(self.device)
+        k_idx_list = torch.tensor(k_idx_list).to(device)
         k_idx_list = k_idx_list.unsqueeze(0).expand(At, Nbr, Nbr - 1)
         k_idx_list = k_idx_list.unsqueeze(0).expand(B, At, Nbr, Nbr - 1)
         nbr_k = nbr_idx.unsqueeze(2).expand(B, At, Nbr, Nbr)
@@ -176,6 +170,10 @@ def atomic_distances(
         distance of every atom to its neighbors with (B x At x Nbr) shape.
     dist_vec : torch.Tensor
         direction cosines of every atom to its neighbors with (B x At x Nbr x 3) shape.
+
+    References
+    ----------
+    .. [1] https://github.com/ken2403/schnetpack/blob/master/src/schnetpack/nn/neighbors.py
     """
 
     # Construct auxiliary index vector
@@ -227,6 +225,10 @@ class AtomicDistances(nn.Module):
     ----------
     return_directions : bool, default=True
         if False, the `forward` method does not return normalized direction vectors.
+
+    References
+    ----------
+    .. [1] https://github.com/ken2403/schnetpack/blob/master/src/schnetpack/nn/neighbors.py
     """
 
     def __init__(self, return_directions: bool = True) -> None:
