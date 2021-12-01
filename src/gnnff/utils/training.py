@@ -18,7 +18,9 @@ def get_metrics(args):
                 args.predict_property["forces"],
                 args.predict_property["forces"],
                 element_wise=True,
-            ),
+            )
+        )
+        metrics.append(
             spk.train.metrics.RootMeanSquaredError(
                 args.predict_property["forces"],
                 args.predict_property["forces"],
@@ -30,7 +32,9 @@ def get_metrics(args):
             spk.train.metrics.MeanAbsoluteError(
                 args.predict_property["energy"],
                 args.predict_property["energy"],
-            ),
+            )
+        )
+        metrics.append(
             spk.train.metrics.RootMeanSquaredError(
                 args.predict_property["energy"],
                 args.predict_property["energy"],
