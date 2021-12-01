@@ -10,7 +10,7 @@ from gnnff.data.celldata import CellData
 from gnnff.model.gnnff import GNNFF
 from gnnff.utils.evaluation import evaluate
 from gnnff.utils.data import get_loader
-from gnnff.utils.training import get_trainer
+from gnnff.utils.training import get_metrics, get_trainer
 from gnnff.utils.script_utils import ScriptError, count_params, read_from_json
 
 
@@ -30,14 +30,7 @@ def main(args):
     train_loader, val_loader, test_loader = get_loader(dataset, args)
 
     # setup property metrics
-    metrics = [
-        spk.train.metrics.MeanAbsoluteError(
-            args.predict_property, args.predict_property
-        ),
-        spk.train.metrics.RootMeanSquaredError(
-            args.predict_property, args.predict_property
-        ),
-    ]
+    metrics = get_metrics(args)
 
     # train or eval
     if args.mode == "train":

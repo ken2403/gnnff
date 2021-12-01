@@ -6,7 +6,37 @@ from torch.optim import Adam
 
 from gnnff.train.trainer import Trainer
 
-__all__ = ["get_trainer", "simple_loss_fn"]
+__all__ = ["get_metrics", "get_trainer", "simple_loss_fn"]
+
+
+def get_metrics(args):
+    property_keys = args.args.predict_property.keys()
+    metrics = []
+    if "forces" in property_keys:
+        metrics.append(
+            spk.train.metrics.MeanAbsoluteError(
+                args.predict_property["forces"],
+                args.predict_property["forces"],
+                element_wise=True,
+            ),
+            spk.train.metrics.RootMeanSquaredError(
+                args.predict_property["forces"],
+                args.predict_property["forces"],
+                element_wise=True,
+            ),
+        )
+    elif "energy" in property_keys:
+        metrics.append(
+            spk.train.metrics.MeanAbsoluteError(
+                args.predict_property["energy"],
+                args.predict_property["energy"],
+            ),
+            spk.train.metrics.RootMeanSquaredError(
+                args.predict_property["energy"],
+                args.predict_property["energy"],
+            ),
+        )
+    return metrics
 
 
 def get_trainer(args, model, train_loader, val_loader, metrics):
