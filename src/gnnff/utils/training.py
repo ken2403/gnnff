@@ -10,7 +10,7 @@ __all__ = ["get_metrics", "get_trainer", "simple_loss_fn"]
 
 
 def get_metrics(args):
-    property_keys = args.args.predict_property.keys()
+    property_keys = args.predict_property.keys()
     metrics = []
     if "forces" in property_keys:
         metrics.append(
