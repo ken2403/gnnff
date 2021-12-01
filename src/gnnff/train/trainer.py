@@ -169,7 +169,7 @@ class Trainer:
 
         Parameters
         ----------
-        device : torch.torch.Device
+        device : torch.device
             device on which training takes place.
         n_epochs : int
             number of training epochs.
@@ -207,7 +207,8 @@ class Trainer:
                 train_iter = self.train_loader
 
                 self._model.train()
-                scaler = torch.cuda.amp.GradScaler()
+                if device == torch.device("cuda"):
+                    scaler = torch.cuda.amp.GradScaler()
                 for train_batch in train_iter:
                     self.optimizer.zero_grad()
 
@@ -233,12 +234,18 @@ class Trainer:
                                 if self.regularization == "l2":
                                     reg = reg + torch.norm(param, 1) ** 2
                         loss = loss + lambda_ * reg
-                    # Scales loss.  Calls backward() on scaled loss to create scaled gradients.
-                    scaler.scale(loss).backward()
-                    # scaler.step() first unscales the gradients of the optimizer's assigned params.
-                    scaler.step(self.optimizer)
-                    # Updates the scale for next iteration.
-                    scaler.update()
+
+                    if device == torch.device("cuda"):
+                        # Scales loss.  Calls backward() on scaled loss to create scaled gradients.
+                        scaler.scale(loss).backward()
+                        # scaler.step() first unscales the gradients of the optimizer's assigned params.
+                        scaler.step(self.optimizer)
+                        # Updates the scale for next iteration.
+                        scaler.update()
+                    else:
+                        loss.backward()
+                        self.optimizer.step()
+
                     self.step += 1
 
                     for h in self.hooks:
