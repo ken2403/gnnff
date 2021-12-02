@@ -35,7 +35,7 @@ class NodeUpdate(nn.Module):
         self.bn = nn.BatchNorm1d(n_node_feature)
 
     def forward(
-        self, node_embedding: Tensor, edge_embeding: Tensor, nbr_mask: Tensor
+        self, node_embedding: Tensor, edge_embedding: Tensor, nbr_mask: Tensor
     ) -> Tensor:
         """
         Calculate the updated node embedding.
@@ -62,14 +62,14 @@ class NodeUpdate(nn.Module):
         ----------
         .. [1] https://github.com/ken2403/cgcnn/blob/master/cgcnn/model.py
         """
-        B, At, Nbr, _ = edge_embeding.size()
+        B, At, Nbr, _ = edge_embedding.size()
         _, _, n_node_feature = node_embedding.size()
 
         # make c1-ij tensor
         c1 = torch.cat(
             [
                 node_embedding.unsqueeze(2).expand(B, At, Nbr, n_node_feature),
-                edge_embeding,
+                edge_embedding,
             ],
             dim=3,
         )
