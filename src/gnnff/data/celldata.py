@@ -21,6 +21,7 @@ class CellDataError(Exception):
 
 class CellData(Dataset):
     """
+    From the unit cell database, compose the dataset that can be used for inputs of GNNFF.
 
     Attributes
     ----------
