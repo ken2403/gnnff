@@ -121,7 +121,9 @@ def get_edge_k(edge_embedding: Tensor, nbr_idx: Tensor) -> Tensor:
 
     # make index list of atom k, (B x At x Nbr, Nbr-1)
     k_idx_list = torch.row_stack([torch.arange(Nbr) for _ in range(Nbr)]).to(device)
-    k_idx_list.flatten()[1:].view(Nbr - 1, Nbr + 1)[:, :-1].reshape(Nbr, Nbr - 1)
+    k_idx_list = (
+        k_idx_list.flatten()[1:].view(Nbr - 1, Nbr + 1)[:, :-1].reshape(Nbr, Nbr - 1)
+    )
     k_idx_list = k_idx_list.unsqueeze(0).expand(At, Nbr, Nbr - 1)
     k_idx_list = k_idx_list.unsqueeze(0).expand(B, At, Nbr, Nbr - 1)
     nbr_k = nbr_idx.unsqueeze(2).expand(B, At, Nbr, Nbr)
