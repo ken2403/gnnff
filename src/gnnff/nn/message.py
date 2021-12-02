@@ -162,11 +162,8 @@ class EdgeUpdate(nn.Module):
         _, _, n_node_feature = node_embedding.size()
 
         # make c2_ij tensor. (B x At x Nbr x n_node_feature) of shape.
-        # node_i = node_embedding.unsqueeze(2).expand(B, At, Nbr, n_node_feature)
         nbh = nbr_idx.reshape(-1, At * Nbr, 1)
         nbh = nbh.expand(-1, -1, n_node_feature)
-        # node_j = torch.gather(node_embedding, dim=1, index=nbh)
-        # node_j = node_j.view(B, At, Nbr, -1)
 
         # element-wise multiplication of node_i and node_j
         c2 = node_embedding.unsqueeze(2).expand(
