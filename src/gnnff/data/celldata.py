@@ -278,7 +278,7 @@ def _convert_atoms(atoms: ase.Atoms, cutoff: float, output: dict = None) -> dict
     # get atom neighbors
     nbh_idx, distances, unit_vecs, offsets = _get_nbr_info(atoms, cutoff=cutoff)
 
-    # Get neighbors and neighbor mask
+    # Get neighbors
     outputs[Keys.neighbors] = nbh_idx.astype(np.int32)
 
     # Get cells
@@ -299,7 +299,7 @@ def torchify_dict(data: dict):
     Parameters
     ----------
     data : dict
-        property data of np.ndarrays
+        property data of np.ndarrays.
 
     References
     ----------
