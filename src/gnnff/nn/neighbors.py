@@ -81,7 +81,7 @@ class GetNodeK(nn.Module):
         return get_node_k(node_embedding, nbr_idx)
 
 
-def get_edge_k(edge_embedding: Tensor, nbr_idx: Tensor) -> Tensor:
+def get_edge_k(edge_embedding: Tensor, nbr_idx: Tensor, cell_offset: Tensor) -> Tensor:
     """
     Get the edge emmbedding of the third atom of triples of atom(i, j, k).
     The centered atom corresponds to each index of At.
@@ -96,6 +96,8 @@ def get_edge_k(edge_embedding: Tensor, nbr_idx: Tensor) -> Tensor:
         batch of node embedding tensor of (B x At x x Nbr x n_edge_feature) shape.
     nbr_idx : torch.Tensor
         Indices of neighbors of each atom. (B x At x Nbr) of shape.
+    cell_offset : torch.Tensor
+        offset of atom in cell coordinates with (B x At x Nbr x 3) shape.
 
     Returns
     -------
@@ -142,7 +144,9 @@ class GetEdgeK(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-    def forward(self, edge_embedding: Tensor, nbr_idx: Tensor) -> Tensor:
+    def forward(
+        self, edge_embedding: Tensor, nbr_idx: Tensor, cell_offset: Tensor
+    ) -> Tensor:
         """
         Get the edge emmbedding of the third atom of triples of atom(i, j, k).
         The centered atom corresponds to each index of At.
@@ -157,6 +161,8 @@ class GetEdgeK(nn.Module):
             batch of node embedding tensor of (B x At x x Nbr x n_edge_feature) shape.
         nbr_idx : torch.Tensor
             Indices of neighbors of each atom. (B x At x Nbr) of shape.
+        cell_offset : torch.Tensor
+            offset of atom in cell coordinates with (B x At x Nbr x 3) shape.
 
         Returns
         -------
@@ -164,7 +170,7 @@ class GetEdgeK(nn.Module):
             edge embedding from third atom(k) to second atom(j) of each triples.
             (B x At x Nbr x Nbr-1 x n_edge_feature) of shape.
         """
-        return get_edge_k(edge_embedding, nbr_idx)
+        return get_edge_k(edge_embedding, nbr_idx, cell_offset)
 
 
 def atomic_distances(

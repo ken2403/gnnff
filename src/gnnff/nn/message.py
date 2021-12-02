@@ -134,6 +134,7 @@ class EdgeUpdate(nn.Module):
         edge_embedding: Tensor,
         nbr_idx: Tensor,
         nbr_mask: Tensor,
+        cell_offset: Tensor,
     ) -> Tensor:
         """
         Calculate the updated edge embedding.
@@ -152,6 +153,8 @@ class EdgeUpdate(nn.Module):
             Indices of neighbors of each atom. (B x At x Nbr) of shape.
         nbr_mask : torch.Tensor
             boolean mask for neighbor positions.(B x At x Nbr) of shape.
+        cell_offset : torch.Tensor
+            offset of atom in cell coordinates with (B x At x Nbr x 3) shape.
 
         Returns
         -------
@@ -208,7 +211,7 @@ class EdgeUpdate(nn.Module):
                 # edge_ij
                 edge_embedding.unsqueeze(3).expand(B, At, Nbr, Nbr_k, n_edge_feature),
                 # edge_jk
-                # self.get_edge_k(edge_embedding, nbr_idx)
+                # self.get_edge_k(edge_embedding, nbr_idx, cell_offset)
             ],
             dim=4,
         )
@@ -258,6 +261,7 @@ class MessagePassing(nn.Module):
         edge_embeding: Tensor,
         nbr_idx: Tensor,
         nbr_mask: Tensor,
+        cell_offset: Tensor,
     ) -> Tensor:
         """
         Calculate the updated node and edge embedding by message passing layer.
@@ -275,6 +279,9 @@ class MessagePassing(nn.Module):
         nbr_idx : torch.Tensor
             Indices of neighbors of each atom. (B x At x Nbr) of shape.
         nbr_mask : torch.Tensor
+            boolean mask for neighbor positions.(B x At x Nbr) of shape.
+        cell_offset : torch.Tensor
+            offset of atom in cell coordinates with (B x At x Nbr x 3) shape.
 
         Returns
         -------
@@ -293,6 +300,7 @@ class MessagePassing(nn.Module):
             edge_embeding,
             nbr_idx,
             nbr_mask,
+            cell_offset,
         )
 
         return node_embedding, edge_embeding

@@ -284,7 +284,7 @@ def _convert_atoms(atoms: ase.Atoms, cutoff: float, output: dict = None) -> dict
 
     # Get cells
     # outputs[Keys.cell] = np.array(atoms.cell.array, dtype=np.float32)
-    # outputs[Keys.cell_offset] = offsets.astype(np.float32)
+    outputs[Keys.cell_offset] = offsets.astype(np.float32)
 
     # Get distances
     outputs[Keys.distances] = distances.astype(np.float32)
