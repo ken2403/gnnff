@@ -2,7 +2,7 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 from gnnff.nn.base import Dense
-from gnnff.nn.neighbors import GetNodeK, GetEdgeK
+from gnnff.nn.neighbors import GetNodeK, GetEdgeJK
 
 
 __all__ = ["NodeUpdate", "EdgeUpdate", "MessagePassing"]
@@ -73,6 +73,7 @@ class NodeUpdate(nn.Module):
             ],
             dim=3,
         )
+
         # apply neighbor mask, if there are no neighbor, padding with 0
         c1[nbr_mask == 0] = 0.0
         # fully connected layter
@@ -86,6 +87,7 @@ class NodeUpdate(nn.Module):
         nbr_sumed = self.bn(nbr_sumed.view(-1, n_node_feature)).view(
             B, At, n_node_feature
         )
+
         # last activation layer and Residual Network
         node_embedding = self.tanh(node_embedding + nbr_sumed)
         return node_embedding
@@ -111,16 +113,10 @@ class EdgeUpdate(nn.Module):
         super().__init__()
         self.fc_two_body = Dense(n_node_feature, 2 * n_edge_feature, activation=None)
         self.bn_two_body = nn.BatchNorm1d(n_edge_feature)
-        # TODO: edge_jkをふくめる
         self.get_node_k = GetNodeK()
-        self.get_edge_k = GetEdgeK()
-        # self.fc_three_body = Dense(
-        #     3 * n_node_feature + 2 * n_edge_feature,
-        #     2 * n_edge_feature,
-        #     activation=None,
-        # )
+        self.get_edge_jk = GetEdgeJK()
         self.fc_three_body = Dense(
-            3 * n_node_feature + n_edge_feature,
+            3 * n_node_feature + 2 * n_edge_feature,
             2 * n_edge_feature,
             activation=None,
         )
@@ -167,11 +163,11 @@ class EdgeUpdate(nn.Module):
         # make c2_ij tensor. (B x At x Nbr x n_node_feature) of shape.
         nbh = nbr_idx.reshape(-1, At * Nbr, 1)
         nbh = nbh.expand(-1, -1, n_node_feature)
-
         # element-wise multiplication of node_i and node_j
         c2 = node_embedding.unsqueeze(2).expand(
             B, At, Nbr, n_node_feature
         ) * torch.gather(node_embedding, dim=1, index=nbh).view(B, At, Nbr, -1)
+
         # apply neighbor mask, if there are no neighbor, padding with 0
         c2[nbr_mask == 0] = 0.0
         # fully connected layter with c2
@@ -186,35 +182,34 @@ class EdgeUpdate(nn.Module):
             two_body_embedding.view(-1, n_edge_feature)
         ).view(B, At, Nbr, n_edge_feature)
 
-        # make c3_ijk tensor. (B x At x Nbr x Nbr_k x 3*n_node_feature + 2*n_edge_feature) of shape.
-        Nbr_k = Nbr - 1
-        # node_i = node_i.unsqueeze(3).expand(B, At, Nbr, Nbr_k, n_node_feature)
-        # node_j = node_j.unsqueeze(3).expand(B, At, Nbr, Nbr_k, n_node_feature)
-        # node_k = self.get_node_k(node_embedding, nbr_idx)
-        # edge_ij = edge_embedding.unsqueeze(3).expand(B, At, Nbr, Nbr_k, n_edge_feature)
-        # edge_jk = self.get_edge_k(edge_embedding, nbr_idx)
-        # c3 = torch.cat([node_i, node_j, node_k, edge_ij, edge_jk], dim=4)
-        # TODO: edge_kjをふくめる
+        # make c3_ijk tensor. (B x At x Nbr x Nbr x 3*n_node_feature + 2*n_edge_feature) of shape.
         c3 = torch.cat(
             [  # node_i
                 node_embedding.unsqueeze(2)
                 .expand(B, At, Nbr, n_node_feature)
                 .unsqueeze(3)
-                .expand(B, At, Nbr, Nbr_k, n_node_feature),
+                .expand(B, At, Nbr, Nbr, n_node_feature),
                 # node_j
                 torch.gather(node_embedding, dim=1, index=nbh)
                 .view(B, At, Nbr, -1)
                 .unsqueeze(3)
-                .expand(B, At, Nbr, Nbr_k, n_node_feature),
+                .expand(B, At, Nbr, Nbr, n_node_feature),
                 # node_k
                 self.get_node_k(node_embedding, nbr_idx),
                 # edge_ij
-                edge_embedding.unsqueeze(3).expand(B, At, Nbr, Nbr_k, n_edge_feature),
+                edge_embedding.unsqueeze(3).expand(B, At, Nbr, Nbr, n_edge_feature),
                 # edge_jk
-                # self.get_edge_k(edge_embedding, nbr_idx, cell_offset)
+                self.get_edge_jk(edge_embedding, nbr_idx, cell_offset),
             ],
             dim=4,
         )
+
+        # apply neighbor mask to neighbor j, if there are no neighbor, padding with 0
+        c3[nbr_mask == 0] = 0
+        # apply neighbor mask to neighbor k, if there are no neighbor, padding with 0
+        nbr_mask = nbr_mask.unsqueeze(-1).expand(B, At, Nbr, c3.size()[-1])
+        nbr_mask = nbr_mask.unsqueeze(2).expand(B, At, Nbr, Nbr, -1)
+        c3[nbr_mask == 0] = 0
         # fully connected layter with c3
         c3 = self.fc_three_body(c3)
         # calculate the gate and extract features with three-body interaction

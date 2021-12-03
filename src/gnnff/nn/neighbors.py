@@ -3,7 +3,7 @@ from torch import Tensor
 import torch.nn as nn
 
 
-__all__ = ["GetNodeK", "GetEdgeK", "AtomicDistances"]
+__all__ = ["GetNodeK", "GetEdgeJK", "AtomicDistances"]
 
 
 def get_node_k(node_embedding: Tensor, nbr_idx: Tensor) -> Tensor:
@@ -25,27 +25,39 @@ def get_node_k(node_embedding: Tensor, nbr_idx: Tensor) -> Tensor:
     Returns
     -------
     node_k : torch.Tensor
-        node embedding of third atom. (B x At x Nbr x Nbr-1 x n_node_feature) of shape.
+        node embedding of third atom. (B x At x Nbr x Nbr x n_node_feature) of shape.
     """
     B, At, n_node_feature = node_embedding.size()
     _, _, Nbr = nbr_idx.size()
     device = node_embedding.device
 
     # make index list of atom k
-    k_idx_list = torch.row_stack([torch.arange(Nbr) for _ in range(Nbr)]).to(device)
-    k_idx_list = (
-        k_idx_list.flatten()[1:].view(Nbr - 1, Nbr + 1)[:, :-1].reshape(Nbr, Nbr - 1)
-    )
-    k_idx_list = k_idx_list.unsqueeze(0).expand(At, Nbr, Nbr - 1)
-    k_idx_list = k_idx_list.unsqueeze(0).expand(B, At, Nbr, Nbr - 1)
+    # k_idx_list = torch.row_stack([torch.arange(Nbr) for _ in range(Nbr)]).to(device)
+    # k_idx_list = (
+    #     k_idx_list.flatten()[1:].view(Nbr - 1, Nbr + 1)[:, :-1].reshape(Nbr, Nbr - 1)
+    # )
+    # k_idx_list = k_idx_list.unsqueeze(0).expand(At, Nbr, Nbr - 1)
+    # k_idx_list = k_idx_list.unsqueeze(0).expand(B, At, Nbr, Nbr - 1)
+    k_nbr_idx = nbr_idx.unsqueeze(2).expand(B, At, Nbr, Nbr)
+    k_nbr_idx = k_nbr_idx.reshape(B, At * Nbr * Nbr, 1)
+    k_nbr_idx = k_nbr_idx.expand(-1, -1, n_node_feature)
 
-    nbr_k = nbr_idx.unsqueeze(2).expand(B, At, Nbr, Nbr)
-    nbr_k = torch.gather(nbr_k, 3, k_idx_list)
-    nbr_k = nbr_k.reshape(B, At * Nbr * (Nbr - 1), 1)
-    nbr_k = nbr_k.expand(-1, -1, n_node_feature)
-    # get atom k's embedding. (B x At x Nbr x Nbr-1 x n_node_feature) of shape.
-    node_k = torch.gather(node_embedding, 1, nbr_k)
-    node_k = node_k.view(B, At, Nbr, Nbr - 1, n_node_feature)
+    # nbr_k = nbr_idx.unsqueeze(2).expand(B, At, Nbr, Nbr)
+    # nbr_k = torch.gather(nbr_k, 3, k_idx_list)
+    # nbr_k = nbr_k.reshape(B, At * Nbr * (Nbr - 1), 1)
+    # nbr_k = nbr_k.expand(-1, -1, n_node_feature)
+
+    # get atom k's embedding. (B x At x Nbr x Nbr x n_node_feature) of shape.
+    node_k = torch.gather(node_embedding, 1, k_nbr_idx)
+    node_k = node_k.view(B, At, Nbr, Nbr, n_node_feature)
+    # padding with 0 for atom j's embedding
+    nbr_bool = torch.ones((Nbr, Nbr), dtype=torch.int16) - torch.eye(
+        Nbr, dtype=torch.int16
+    )
+    nbr_bool = nbr_bool.unsqueeze(-1).expand(-1, -1, n_node_feature)
+    nbr_bool.to(device)
+    node_k[:, :, nbr_bool == 0] = 0
+
     return node_k
 
 
@@ -76,12 +88,12 @@ class GetNodeK(nn.Module):
         Returns
         -------
         node_k : torch.Tensor
-            node embedding of third atom. (B x At x Nbr x Nbr-1 x n_node_feature) of shape.
+            node embedding of third atom. (B x At x Nbr x Nbr x n_node_feature) of shape.
         """
         return get_node_k(node_embedding, nbr_idx)
 
 
-def get_edge_k(edge_embedding: Tensor, nbr_idx: Tensor, cell_offset: Tensor) -> Tensor:
+def get_edge_jk(edge_embedding: Tensor, nbr_idx: Tensor, cell_offset: Tensor) -> Tensor:
     """
     Get the edge emmbedding of the third atom of triples of atom(i, j, k).
     The centered atom corresponds to each index of At.
@@ -103,40 +115,56 @@ def get_edge_k(edge_embedding: Tensor, nbr_idx: Tensor, cell_offset: Tensor) -> 
     -------
     edge_kj : torch.Tensor
         edge embedding from third atom(k) to second atom(j) of each triples.
-        (B x At x Nbr x Nbr-1 x n_edge_feature) of shape.
+        (B x At x Nbr x Nbr x n_edge_feature) of shape.
     """
     B, At, Nbr, n_edge_feature = edge_embedding.size()
     device = edge_embedding.device
 
-    # expande edge_embdding, (B x At x Nbr x n_edge_featutre)->(B x At x Nbr x Nbr x n_edge_feature)
-    nbr_idx_edge = nbr_idx.unsqueeze(3).expand(B, At, Nbr, n_edge_feature)
-    nbr_idx_edge = nbr_idx_edge.unsqueeze(3).expand(B, At, Nbr, Nbr, n_edge_feature)
-    nbr_idx_edge = nbr_idx_edge.reshape(B, At * Nbr, Nbr, n_edge_feature)
-    edge_embedding_expand = torch.gather(edge_embedding, 1, nbr_idx_edge).view(
-        B, At, Nbr, Nbr, n_edge_feature
-    )
+    # get edge_embdding from atom i to neighbor k. (B x At x Nbr x Nbr x n_edge_feature) of shape.
+    k_nbr_edge = edge_embedding.unsqueeze(2).expand(B, At, Nbr, Nbr, n_edge_feature)
+    # nbr_idx_edge = nbr_idx.unsqueeze(3).expand(B, At, Nbr, n_edge_feature)
+    # nbr_idx_edge = nbr_idx_edge.unsqueeze(3).expand(B, At, Nbr, Nbr, n_edge_feature)
+    # nbr_idx_edge = nbr_idx_edge.reshape(B, At * Nbr, Nbr, n_edge_feature)
+    # j_nbr_edge = torch.gather(edge_embedding, 1, nbr_idx_edge).view(
+    #     B, At, Nbr, Nbr, n_edge_feature
+    # )
 
-    # expande nbr_idx, (B x At x Nbr)->(B x At x Nbr x Nbr)
-    nbr_idx_2 = nbr_idx.unsqueeze(3).expand(B, At, Nbr, Nbr)
-    nbr_idx_2 = nbr_idx_2.reshape(B, At * Nbr, Nbr)
-    nbr_idx_expand = torch.gather(nbr_idx, 1, nbr_idx_2).view(B, At, Nbr, Nbr)
+    # get j's neighbor indices. (B x At x Nbr x Nbr) of shape.
+    nbr_idx_expand = nbr_idx.unsqueeze(3).expand(B, At, Nbr, Nbr)
+    nbr_idx_expand = nbr_idx_expand.reshape(B, At * Nbr, Nbr)
+    j_nbr_idx = torch.gather(nbr_idx, 1, nbr_idx_expand).view(B, At, Nbr, Nbr)
 
-    # make index list of atom k, (B x At x Nbr, Nbr-1)
-    k_idx_list = torch.row_stack([torch.arange(Nbr) for _ in range(Nbr)]).to(device)
-    k_idx_list = (
-        k_idx_list.flatten()[1:].view(Nbr - 1, Nbr + 1)[:, :-1].reshape(Nbr, Nbr - 1)
-    )
-    k_idx_list = k_idx_list.unsqueeze(0).expand(At, Nbr, Nbr - 1)
-    k_idx_list = k_idx_list.unsqueeze(0).expand(B, At, Nbr, Nbr - 1)
-    nbr_k = nbr_idx.unsqueeze(2).expand(B, At, Nbr, Nbr)
-    nbr_k = torch.gather(nbr_k, 3, k_idx_list)
-    nbr_k = nbr_k.reshape(B, At * Nbr * (Nbr - 1), 1)
-    nbr_k = nbr_k.expand(-1, -1, n_edge_feature)
+    # expande nbr_idx, (B x At x Nbr) -> (B x At x Nbr x Nbr)
+    k_nbr_idx = nbr_idx.unsqueeze(2).expand(B, At, Nbr, Nbr)
+    # set the diagonal component to -1, to eliminate indices of same atom j
+    eye = torch.eye(Nbr, dtype=torch.int16).to(device)
+    k_nbr_idx = k_nbr_idx * (torch.ones_like(k_nbr_idx) - eye) - eye
 
-    return None
+    idx_bool = torch.zeros_like(k_nbr_idx)
+    for i in range(Nbr):
+        # compare the each neighbor idx, and extract if idx matches.
+        same_nbr = (j_nbr_idx == k_nbr_idx[:, :, :, i : i + 1]).nonzero()
+        # check the position of the each idx.
+        pos_check = (
+            cell_offset[same_nbr[:, 0], same_nbr[:, 1], i]
+            == cell_offset[
+                same_nbr[:, 0],
+                nbr_idx[same_nbr[:, 0], same_nbr[:, 1], same_nbr[:, 2]],
+                same_nbr[:, 3],
+            ]
+        ).all(dim=1)
+        # extract only the idx which is the same location.
+        same_nbr = same_nbr[pos_check, :]
+        idx_bool[same_nbr[:, 0], same_nbr[:, 1], same_nbr[:, 2], i] = 1.0
+
+    # get edge_embedding from j to k. (B x At x Nbr x Nbr) of shape.
+    edge_k = torch.zeros_like(k_nbr_edge)
+    edge_k[idx_bool == 1, :] = k_nbr_edge[idx_bool == 1, :]
+
+    return edge_k
 
 
-class GetEdgeK(nn.Module):
+class GetEdgeJK(nn.Module):
     """
     Extract the edge embedding of the third atom of triples.
     """
@@ -168,9 +196,9 @@ class GetEdgeK(nn.Module):
         -------
         edge_kj : torch.Tensor
             edge embedding from third atom(k) to second atom(j) of each triples.
-            (B x At x Nbr x Nbr-1 x n_edge_feature) of shape.
+            (B x At x Nbr x Nbr x n_edge_feature) of shape.
         """
-        return get_edge_k(edge_embedding, nbr_idx, cell_offset)
+        return get_edge_jk(edge_embedding, nbr_idx, cell_offset)
 
 
 def atomic_distances(
