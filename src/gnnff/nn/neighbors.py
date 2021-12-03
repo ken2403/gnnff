@@ -113,7 +113,7 @@ def get_edge_jk(edge_embedding: Tensor, nbr_idx: Tensor, cell_offset: Tensor) ->
 
     Returns
     -------
-    edge_kj : torch.Tensor
+    edge_jk : torch.Tensor
         edge embedding from third atom(k) to second atom(j) of each triples.
         (B x At x Nbr x Nbr x n_edge_feature) of shape.
     """
@@ -158,10 +158,10 @@ def get_edge_jk(edge_embedding: Tensor, nbr_idx: Tensor, cell_offset: Tensor) ->
         idx_bool[same_nbr[:, 0], same_nbr[:, 1], same_nbr[:, 2], i] = 1.0
 
     # get edge_embedding from j to k. (B x At x Nbr x Nbr) of shape.
-    edge_k = torch.zeros_like(k_nbr_edge)
-    edge_k[idx_bool == 1, :] = k_nbr_edge[idx_bool == 1, :]
+    edge_jk = torch.zeros_like(k_nbr_edge)
+    edge_jk[idx_bool == 1, :] = k_nbr_edge[idx_bool == 1, :]
 
-    return edge_k
+    return edge_jk
 
 
 class GetEdgeJK(nn.Module):

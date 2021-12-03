@@ -18,4 +18,5 @@ __version__ = ".".join(map(str, __version_info__))
     - training時のtensor計算の最適化
 - (0.1.0)
     - edge_jk を計算に含める
+    - 学習時のメモリーサイズを小さくするために、変数名変更
 """
