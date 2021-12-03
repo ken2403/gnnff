@@ -17,6 +17,7 @@ __version__ = ".".join(map(str, __version_info__))
     - gnnffで力とエネルギーを同時に学習できるようにレイアウトを変更
     - training時のtensor計算の最適化
 - (0.1.0)
+    - res nets なくす
     - edge_jk を計算に含める
     - 学習時のメモリーサイズを小さくするために、変数名変更
 """
