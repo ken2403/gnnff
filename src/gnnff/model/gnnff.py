@@ -40,13 +40,17 @@ class GNNFF(nn.Module):
     Referrences
     -----------
     .. [1] Park, C.W., Kornbluth, M., Vandermause, J. et al.
-       Accurate and scalable graph neural network force field
-       and molecular dynamics with direct force architecture.
+       "Accurate and scalable graph neural network force field
+       and molecular dynamics with direct force architecture."
        npj Comput Mater 7, 73 (2021).
     .. [2] Schütt, Sauceda, Kindermans, Tkatchenko, Müller:
-       SchNet - a deep learning architecture for molceules and materials.
+       "SchNet - a deep learning architecture for molceules and materials."
        The Journal of Chemical Physics 148 (24), 241722. 2018.
-    .. [3] M. Gastegger, L. Schwiedrzik, M. Bittermann, F. Berzsenyi, and P. Marquetand ,
+    .. [3] Tian Xie and Jeffrey C. Grossman,
+        "Crystal Graph Convolutional Neural Networks for an Accurate and
+        Interpretable Prediction of Material Properties"
+        Phys. Rev. Lett. 120, 145301 (2018)
+    .. [4] M. Gastegger, L. Schwiedrzik, M. Bittermann, F. Berzsenyi, and P. Marquetand ,
        "wACSF—Weighted atom-centered symmetry functions as descriptors in machine learning potentials",
        J. Chem. Phys. 148, 241709 (2018)
     """
@@ -65,7 +69,7 @@ class GNNFF(nn.Module):
         n_output_layers: int = 2,
     ) -> None:
         super().__init__()
-        # implementation of gaussian_filter_end (ref: [3])
+        # implementation of gaussian_filter_end (ref: [4])
         if gaussian_filter_end is None:
             gaussian_filter_end = cutoff - 0.5
         self.gnn = GraphToFeatures(
