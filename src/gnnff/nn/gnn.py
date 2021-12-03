@@ -102,7 +102,7 @@ class GraphToFeatures(nn.Module):
 
         # get cell_offsets and inter atomic distances.
         r_ij = inputs[Keys.distances]
-        cell_offsets = inputs[Keys.cell_offset]
+        cell_offset = inputs[Keys.cell_offset]
 
         # get initial embedding
         node_embedding = self.initial_node_embedding(atomic_numbers)
@@ -118,7 +118,7 @@ class GraphToFeatures(nn.Module):
         # message passing
         for message_passing in self.message_passings:
             node_embedding, edge_embedding = message_passing(
-                node_embedding, edge_embedding, nbr_idx, nbr_mask, cell_offsets
+                node_embedding, edge_embedding, nbr_idx, nbr_mask, cell_offset
             )
             if self.return_intermediate:
                 node_list.append(node_embedding)
