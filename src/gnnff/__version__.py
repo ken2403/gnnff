@@ -1,4 +1,4 @@
-__version_info__ = (0, 1, 0)
+__version_info__ = (0, 2, 0)
 __version__ = ".".join(map(str, __version_info__))
 
 """
@@ -20,4 +20,7 @@ __version__ = ".".join(map(str, __version_info__))
     - res nets なくす
     - edge_jk を計算に含める
     - 学習時のメモリーサイズを小さくするために、変数名変更
+- (0.2.0)
+    - edge_jkなくす
+    - nbr_maskをnode_kとc3に適用
 """
