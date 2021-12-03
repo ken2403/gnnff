@@ -1,4 +1,4 @@
-__version_info__ = (0, 0, 5)
+__version_info__ = (0, 1, 0)
 __version__ = ".".join(map(str, __version_info__))
 
 """
@@ -16,4 +16,6 @@ __version__ = ".".join(map(str, __version_info__))
     - 毎回のmessageにresidual netを追加
     - gnnffで力とエネルギーを同時に学習できるようにレイアウトを変更
     - training時のtensor計算の最適化
+- (0.1.0)
+    - edge_jk を計算に含める
 """

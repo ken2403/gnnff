@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 import logging
 import argparse
-import schnetpack as spk
 
 from gnnff.data.celldata import CellData
 from gnnff.model.gnnff import GNNFF
