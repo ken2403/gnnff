@@ -2,7 +2,6 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 
-from gnnff.data.keys import Keys
 from gnnff.nn.gnn import GraphToFeatures
 from gnnff.nn.activation import shifted_softplus
 from gnnff.nn.output import OutputModuleError, ForceMapping, EnergyMapping
