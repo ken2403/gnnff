@@ -6,7 +6,9 @@ import torch.nn as nn
 __all__ = ["GetNodeK", "GetEdgeJK", "AtomicDistances"]
 
 
-def get_node_k(node_embedding: Tensor, nbr_idx: Tensor, nbr_mask: Tensor) -> Tensor:
+def get_node_k(
+    node_embedding: Tensor, nbr_idx: Tensor, nbr_mask: Tensor = None
+) -> Tensor:
     """
     Get the node embedding of the third atom of triples of atom(i, j, k).
     The centered atom corresponds to each index of At.
@@ -31,45 +33,37 @@ def get_node_k(node_embedding: Tensor, nbr_idx: Tensor, nbr_mask: Tensor) -> Ten
     """
     B, At, n_node_feature = node_embedding.size()
     _, _, Nbr = nbr_idx.size()
-    device = node_embedding.device
 
     # make index list of atom k
-    k_idx_list = torch.row_stack([torch.arange(Nbr) for _ in range(Nbr)]).to(device)
-    k_idx_list = (
-        k_idx_list.flatten()[1:].view(Nbr - 1, Nbr + 1)[:, :-1].reshape(Nbr, Nbr - 1)
+    nbr_idx = nbr_idx.unsqueeze(2).expand(B, At, Nbr, Nbr)
+    nbr_idx = (
+        nbr_idx.flatten(start_dim=2)[:, :, 1:]
+        .view(B, At, Nbr - 1, Nbr + 1)[:, :, :, :-1]
+        .reshape(B, At, Nbr, Nbr - 1)
     )
-    k_idx_list = k_idx_list.unsqueeze(0).expand(At, Nbr, Nbr - 1)
-    k_idx_list = k_idx_list.unsqueeze(0).expand(B, At, Nbr, Nbr - 1)
-    # k_nbr_idx = nbr_idx.unsqueeze(2).expand(B, At, Nbr, Nbr)
-    # k_nbr_idx = k_nbr_idx.reshape(B, At * Nbr * Nbr, 1)
-    # k_nbr_idx = k_nbr_idx.expand(-1, -1, n_node_feature)
-
-    nbr_k = nbr_idx.unsqueeze(2).expand(B, At, Nbr, Nbr)
-    nbr_k = torch.gather(nbr_k, 3, k_idx_list)
-    nbr_k = nbr_k.reshape(B, At * Nbr * (Nbr - 1), 1)
-    nbr_k = nbr_k.expand(-1, -1, n_node_feature)
-    nbr_mask = nbr_mask.unsqueeze(2).expand(B, At, Nbr, Nbr)
-    nbr_mask = torch.gather(nbr_mask, 3, k_idx_list)
-    nbr_mask = nbr_mask.unsqueeze(-1).expand(B, At, Nbr, Nbr - 1, n_node_feature)
+    nbr_idx = (
+        nbr_idx.unsqueeze(-1)
+        .expand(B, At, Nbr, Nbr - 1, n_node_feature)
+        .reshape(B, -1, n_node_feature)
+    )
+    if nbr_mask is not None:
+        nbr_mask = nbr_mask.unsqueeze(2).expand(B, At, Nbr, Nbr)
+        nbr_mask = (
+            nbr_mask.flatten(start_dim=2)[:, :, 1:]
+            .view(B, At, Nbr - 1, Nbr + 1)[:, :, :, :-1]
+            .reshape(B, At, Nbr, Nbr - 1)
+        )
 
     # get atom k's embedding. (B x At x Nbr x Nbr-1 x n_node_feature) of shape.
-    node_k = torch.gather(node_embedding, 1, nbr_k)
+    node_k = torch.gather(node_embedding, 1, nbr_idx)
     node_k = node_k.view(B, At, Nbr, Nbr - 1, n_node_feature)
-    # avoid inplace operations
-    tmp_node_k = torch.zeros_like(node_k)
-    tmp_node_k[nbr_mask != 0] = node_k[nbr_mask != 0]
-    node_k = tmp_node_k
-
-    ## get atom k's embedding. (B x At x Nbr x Nbr x n_node_feature) of shape.
-    # node_k = torch.gather(node_embedding, 1, k_nbr_idx)
-    # node_k = node_k.view(B, At, Nbr, Nbr, n_node_feature)
-    # # padding with 0 for atom j's embedding
-    # nbr_bool = torch.ones((Nbr, Nbr), dtype=torch.int16) - torch.eye(
-    #     Nbr, dtype=torch.int16
-    # )
-    # nbr_bool = nbr_bool.unsqueeze(-1).expand(-1, -1, n_node_feature)
-    # nbr_bool.to(device)
-    # node_k[:, :, nbr_bool == 0] = 0
+    if nbr_mask is not None:
+        # avoid inplace operations, padding with zero if there are no neighbors.
+        # tmp_node_k = torch.zeros_like(node_k)
+        # tmp_node_k[nbr_mask != 0] = node_k[nbr_mask != 0]
+        # node_k = tmp_node_k
+        # model size is smaller when training
+        node_k[nbr_mask == 0] = 0.0
 
     return node_k
 
@@ -83,7 +77,7 @@ class GetNodeK(nn.Module):
         super().__init__()
 
     def forward(
-        self, node_embedding: Tensor, nbr_idx: Tensor, nbr_mask: Tensor
+        self, node_embedding: Tensor, nbr_idx: Tensor, nbr_mask: Tensor = None
     ) -> Tensor:
         """
         Get the node embedding of the third atom of triples of atom(i, j, k).
@@ -99,7 +93,7 @@ class GetNodeK(nn.Module):
             batch of node embedding tensor of (B x At x n_node_feature) shape.
         nbr_idx : torch.Tensor
             Indices of neighbors of each atom. (B x At x Nbr) of shape.
-        nbr_mask : torch.Tensor
+        nbr_mask : torch.Tensor or None
             boolean mask for neighbor positions.(B x At x Nbr) of shape.
 
         Returns

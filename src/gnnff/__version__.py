@@ -23,4 +23,10 @@ __version__ = ".".join(map(str, __version_info__))
 - (0.2.0)
     - edge_jkなくす
     - nbr_maskをnode_kとc3に適用
+- (0.2.1)
+    - (NodeUpdate)nbr_maskをc1から外し、sumの前に掛け算で適用(spk参考)
+    - (EdgeUpdate)nbr_maskをc2から外し、node_jのみに適用
+    - (EdgeUpdate)nbr_maskをc3から外し、node_jとnode_kのみに適用
+    - (GraphtoFeature)initial_embeddingに対してnbrmaskを外す
+    - (get_node_k)indexのやり方変更、nbr_maskをindexを利用して適用
 """
