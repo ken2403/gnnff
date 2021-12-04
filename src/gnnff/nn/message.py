@@ -168,12 +168,12 @@ class NodeSimpleUpdate(nn.Module):
         y : torch.Tensor
             updated node embedding tensor of (B x At x n_node_feature) shape.
         """
-        B, At, Nbr, _ = edge_embedding.size()
+        B, At, Nbr, n_edge_feature = edge_embedding.size()
         _, _, n_node_feature = node_embedding.size()
 
         y = self.in2f(node_embedding)
         nbh = nbr_idx.view(B, At * Nbr, 1)
-        nbh = nbh.expand(-1, -1, n_node_feature)
+        nbh = nbh.expand(-1, -1, n_edge_feature)
         y = torch.gather(y, 1, nbh)
         y = y.view(B, At, Nbr, n_node_feature)
 
