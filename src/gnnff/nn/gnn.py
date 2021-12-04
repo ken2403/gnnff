@@ -21,11 +21,13 @@ class GraphToFeatures(nn.Module):
         dimension of the embedded edge features.
     n_message_passing : int, default=3
         number of message passing layers.
-    gaussian_filter_end : float, default=6.0
+    gaussian_filter_end : float, default=5.5
         center of last Gaussian function.
+    update_method : {"simple", "triple"}, default="simple"
+        method of node and edge updating.
     share_weights : bool, default=False
         if True, share the weights across all message passing layers.
-    return_intermediate : bool, default=False
+    return_intermid : bool, default=False
         if True, `forward` method also returns intermediate atomic representations
         after each message passing is applied.
     """
@@ -35,9 +37,10 @@ class GraphToFeatures(nn.Module):
         n_node_feature: int,
         n_edge_feature: int,
         n_message_passing: int = 3,
-        gaussian_filter_end: float = 6.0,
+        gaussian_filter_end: float = 5.5,
+        update_method: str = "simple",
         share_weights: bool = False,
-        return_intermediate: bool = False,
+        return_intermid: bool = False,
     ) -> None:
         super().__init__()
         # layer for initial embedding of node and edge.
@@ -55,6 +58,7 @@ class GraphToFeatures(nn.Module):
                     MessagePassing(
                         n_node_feature=n_node_feature,
                         n_edge_feature=n_edge_feature,
+                        update_method=update_method,
                     )
                 ]
                 * n_message_passing
@@ -65,12 +69,14 @@ class GraphToFeatures(nn.Module):
                     MessagePassing(
                         n_node_feature=n_node_feature,
                         n_edge_feature=n_edge_feature,
+                        update_method=update_method,
                     )
                     for _ in range(n_message_passing)
                 ]
             )
         # set the attribute
-        self.return_intermediate = return_intermediate
+        self.return_intermid = return_intermid
+        self.update_method = update_method
 
     def forward(self, inputs: dict) -> Tensor:
         """
@@ -100,9 +106,12 @@ class GraphToFeatures(nn.Module):
         nbr_mask = inputs[Keys.neighbor_mask]
         # atom_mask = inputs[Keys.atom_mask]
 
-        # get cell_offsets and inter atomic distances.
+        # get inter atomic distances and cell_offsets.
         r_ij = inputs[Keys.distances]
-        cell_offset = inputs[Keys.cell_offset]
+        if self.update_method == "triple":
+            cell_offset = inputs[Keys.cell_offset]
+        else:
+            cell_offset = None
 
         # get initial embedding
         node_embedding = self.initial_node_embedding(atomic_numbers)
@@ -111,19 +120,19 @@ class GraphToFeatures(nn.Module):
         # edge_embedding[nbr_mask == 0] = 0.0
 
         # store inter mediate values
-        if self.return_intermediate:
-            node_list = [node_embedding]
-            edge_list = [edge_embedding]
+        if self.return_intermid:
+            node_list = [node_embedding.detach().cpu().numpy()]
+            edge_list = [edge_embedding.detach().cpu().numpy()]
 
         # message passing
         for message_passing in self.message_passings:
             node_embedding, edge_embedding = message_passing(
                 node_embedding, edge_embedding, nbr_idx, nbr_mask, cell_offset
             )
-            if self.return_intermediate:
+            if self.return_intermid:
                 node_list.append(node_embedding.detach().cpu().numpy())
                 edge_list.append(edge_embedding.detach().cpu().numpy())
 
-        if self.return_intermediate:
+        if self.return_intermid:
             return node_embedding, edge_embedding, node_list, edge_list
         return node_embedding, edge_embedding

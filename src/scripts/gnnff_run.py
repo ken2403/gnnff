@@ -41,8 +41,9 @@ def main(args):
             n_message_passing=args.n_message_passing,
             cutoff=args.cutoff,
             gaussian_filter_end=args.gaussian_filter_end,
+            update_method=args.update_method,
             share_weights=args.share_weights,
-            return_intermediate=False,
+            return_intermid=False,
             properties=args.predict_property,
             n_output_layers=args.n_output_layers,
         )

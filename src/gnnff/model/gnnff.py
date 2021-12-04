@@ -22,9 +22,11 @@ class GNNFF(nn.Module):
         cutoff radius.
     gaussian_filter_end : float or None, default=None
         center of last Gaussian function.
+    update_method : {"simple", "triple"}, default="simple"
+        method of node and edge updating.
     share_weights : bool, default=False
         if True, share the weights across all message passing layers.
-    return_intermediate : bool, default=False
+    return_intermid : bool, default=False
         if True, `forward` method also returns intermediate atomic representations
         after each message passing is applied.
     output_activation : collable or None, default=gnnff.nn.activation.shifted_softplus
@@ -60,8 +62,9 @@ class GNNFF(nn.Module):
         n_message_passing: int = 3,
         cutoff: float = 6.0,
         gaussian_filter_end: float = None,
+        update_method: str = "simple",
         share_weights: bool = False,
-        return_intermediate: bool = False,
+        return_intermid: bool = False,
         output_activation=shifted_softplus,
         properties: dict = {"forces": "forces"},
         n_output_layers: int = 2,
@@ -71,14 +74,15 @@ class GNNFF(nn.Module):
         if gaussian_filter_end is None:
             gaussian_filter_end = cutoff - 0.5
         self.gnn = GraphToFeatures(
-            n_node_feature,
-            n_edge_feature,
-            n_message_passing,
-            gaussian_filter_end,
-            share_weights,
-            return_intermediate,
+            n_node_feature=n_node_feature,
+            n_edge_feature=n_edge_feature,
+            n_message_passing=n_message_passing,
+            gaussian_filter_end=gaussian_filter_end,
+            update_method=update_method,
+            share_weights=share_weights,
+            return_intermid=return_intermid,
         )
-        self.return_intermediate = return_intermediate
+        self.return_intermid = return_intermid
         if "forces" in properties:
             self.output_force = ForceMapping(
                 n_edge_feature,
@@ -118,7 +122,7 @@ class GNNFF(nn.Module):
             intermediate node and edge embeddings are also contanined, if 'return_intermediate=True' was used.
         """
         # from graph, calculating the inter atomic interaction
-        if self.return_intermediate:
+        if self.return_intermid:
             (
                 inputs["last_node_embedding"],
                 inputs["last_edge_embedding"],
@@ -137,7 +141,7 @@ class GNNFF(nn.Module):
         elif "energy" in self.properties:
             result[self.properties["energy"]] = self.output_energy(inputs)
 
-        if self.return_intermediate:
+        if self.return_intermid:
             result["node_list"], result["edge_list"] = node_list, edge_list
             return result
         return result

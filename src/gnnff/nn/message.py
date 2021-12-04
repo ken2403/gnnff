@@ -2,10 +2,18 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 from gnnff.nn.base import Dense
+from gnnff.nn.functional import shifted_softplus
+from gnnff.nn.activation import ShiftedSoftplus
 from gnnff.nn.neighbors import GetNodeK, GetEdgeJK
 
 
-__all__ = ["NodeUpdate", "EdgeUpdate", "MessagePassing"]
+__all__ = [
+    "NodeUpdate",
+    "NodeSimpleUpdate",
+    "EdgeUpdate",
+    "EdgeSimpleUpdate",
+    "MessagePassing",
+]
 
 
 class NodeUpdate(nn.Module):
@@ -35,7 +43,11 @@ class NodeUpdate(nn.Module):
         self.bn = nn.BatchNorm1d(n_node_feature)
 
     def forward(
-        self, node_embedding: Tensor, edge_embedding: Tensor, nbr_mask: Tensor
+        self,
+        node_embedding: Tensor,
+        edge_embedding: Tensor,
+        nbr_idx: Tensor,
+        nbr_mask: Tensor,
     ) -> Tensor:
         """
         Calculate the updated node embedding.
@@ -52,6 +64,8 @@ class NodeUpdate(nn.Module):
             batch of edge embedding tensor of (B x At x Nbr x n_edge_feuture) shape.
         nbr_mask : torch.Tensor
             boolean mask for neighbor positions.(B x At x Nbr) of shape.
+        nbr_idx : torch.Tensor
+            Indices of neighbors of each atom. (B x At x Nbr) of shape.
 
         Returns
         -------
@@ -96,6 +110,84 @@ class NodeUpdate(nn.Module):
         return node_embedding
 
 
+class NodeSimpleUpdate(nn.Module):
+    """
+    Updated the node embedding tensor from the previous node and edge embedding.
+    Using simple method.(ref [1])
+
+    Attributes
+    ----------
+    n_node_feature : int
+        dimension of the embedded node features.
+    n_edge_feature : int
+        dimension of the embedded edge features.
+
+    References
+    ----------
+    ..[1] Schütt, Sauceda, Kindermans, Tkatchenko, Müller:
+       "SchNet - a deep learning architecture for molceules and materials."
+       The Journal of Chemical Physics 148 (24), 241722. 2018.
+    """
+
+    def __init__(
+        self,
+        n_node_feature: int,
+        n_edge_feature: int,
+    ) -> None:
+        super().__init__()
+        self.in2f = Dense(n_node_feature, n_edge_feature, activation=None)
+        self.f2out = Dense(n_edge_feature, n_node_feature, activation=shifted_softplus)
+
+    def forward(
+        self,
+        node_embedding: Tensor,
+        edge_embedding: Tensor,
+        nbr_idx: Tensor,
+        nbr_mask: Tensor,
+    ) -> Tensor:
+        """
+        Calculate the updated node embedding.
+
+        B   :  Batch size
+        At  :  Total number of atoms in the batch
+        Nbr :  Total number of neighbors of each atom
+
+        Parameters
+        ----------
+        node_embedding : torch.Tensor
+            batch of node embedding tensor of (B x At x n_node_feature) shape.
+        edge_embedding : torch.Tensor
+            batch of edge embedding tensor of (B x At x Nbr x n_edge_feuture) shape.
+        nbr_mask : torch.Tensor
+            boolean mask for neighbor positions.(B x At x Nbr) of shape.
+        nbr_idx : torch.Tensor
+            Indices of neighbors of each atom. (B x At x Nbr) of shape.
+
+        Returns
+        -------
+        y : torch.Tensor
+            updated node embedding tensor of (B x At x n_node_feature) shape.
+        """
+        B, At, Nbr, _ = edge_embedding.size()
+        _, _, n_node_feature = node_embedding.size()
+
+        y = self.in2f(node_embedding)
+        nbh = nbr_idx.view(B, At * Nbr, 1)
+        nbh = nbh.expand(-1, -1, n_node_feature)
+        y = torch.gather(y, 1, nbh)
+        y = y.view(B, At, Nbr, n_node_feature)
+
+        # element-wise multiplication, sum of all neighbor and Dense layer
+        y = y * edge_embedding
+        y = y * nbr_mask[..., None]
+        y = torch.sum(y, dim=2)
+        y = self.f2out(y)
+        # ResNet
+        y = y + node_embedding
+
+        return y
+
+
 class EdgeUpdate(nn.Module):
     """
     Updated the edge embedding tensor from the new node embedding and the previous edge embedding.
@@ -138,7 +230,7 @@ class EdgeUpdate(nn.Module):
         edge_embedding: Tensor,
         nbr_idx: Tensor,
         nbr_mask: Tensor,
-        cell_offset: Tensor,
+        cell_offset: Tensor = None,
     ) -> Tensor:
         """
         Calculate the updated edge embedding.
@@ -157,7 +249,7 @@ class EdgeUpdate(nn.Module):
             Indices of neighbors of each atom. (B x At x Nbr) of shape.
         nbr_mask : torch.Tensor
             boolean mask for neighbor positions.(B x At x Nbr) of shape.
-        cell_offset : torch.Tensor
+        cell_offset : torch.Tensor or None, default=None
             offset of atom in cell coordinates with (B x At x Nbr x 3) shape.
 
         Returns
@@ -245,9 +337,10 @@ class EdgeUpdate(nn.Module):
         return edge_embedding
 
 
-class MessagePassing(nn.Module):
+class EdgeSimpleUpdate(nn.Module):
     """
-    Automated feature extraction layer in GNNFF.
+    Updated the edge embedding tensor from the new node embedding and the previous edge embedding.
+    Using simple method(without triple info).
 
     Attributes
     ----------
@@ -263,8 +356,96 @@ class MessagePassing(nn.Module):
         n_edge_feature: int,
     ) -> None:
         super().__init__()
-        self.update_node = NodeUpdate(n_node_feature, n_edge_feature)
-        self.update_edge = EdgeUpdate(n_node_feature, n_edge_feature)
+        self.fc = Dense(2 * n_node_feature + n_edge_feature, 2 * n_edge_feature)
+        self.sigmoid = nn.Sigmoid()
+        self.tanh = nn.Tanh()
+        self.softplus = ShiftedSoftplus()
+
+    def forward(
+        self,
+        node_embedding: Tensor,
+        edge_embedding: Tensor,
+        nbr_idx: Tensor,
+        nbr_mask: Tensor,
+    ) -> Tensor:
+        """
+        Calculate the updated edge embedding.
+
+        B   :  Batch size
+        At  :  Total number of atoms in the batch
+        Nbr :  Total number of neighbors of each atom
+
+        Parameters
+        ----------
+        node_embedding : torch.Tensor
+            batch of node embedding tensor of (B x At x n_node_feature) shape.
+        edge_embedding : torch.Tensor
+            batch of edge embedding tensor of (B x At x Nbr x n_edge_feuture) shape.
+        nbr_idx : torch.Tensor
+            Indices of neighbors of each atom. (B x At x Nbr) of shape.
+        nbr_mask : torch.Tensor
+            boolean mask for neighbor positions.(B x At x Nbr) of shape.
+
+        Returns
+        -------
+        edge_embedding : torch.Tensor
+            updated edge embedding tensor of (B x At x Nbr x n_edge_feuture) shape.
+        """
+        B, At, Nbr, _ = edge_embedding.size()
+        _, _, n_node_feature = node_embedding.size()
+
+        nbh = nbr_idx.reshape(-1, At * Nbr, 1)
+        nbh = nbh.expand(-1, -1, n_node_feature)
+        # element-wise multiplication of node_i and node_j
+        node_i = node_embedding.unsqueeze(2).expand(B, At, Nbr, n_node_feature)
+        node_j = torch.gather(node_embedding, dim=1, index=nbh).view(B, At, Nbr, -1)
+        node_j = node_j * nbr_mask[..., None]
+
+        y = torch.cat([node_i, node_j, edge_embedding], dim=3)
+        y = self.fc(y)
+        nbr_gate, nbr_extract = y.chunk(2, dim=3)
+        nbr_gate = self.sigmoid(nbr_gate)
+        nbr_extract = self.tanh(nbr_extract)
+        update_embedding = nbr_gate * nbr_extract
+        update_embedding = self.softplus(edge_embedding + update_embedding)
+
+        return update_embedding
+
+
+class MessagePassing(nn.Module):
+    """
+    Automated feature extraction layer in GNNFF.
+
+    Attributes
+    ----------
+    n_node_feature : int
+        dimension of the embedded node features.
+    n_edge_feature : int
+        dimension of the embedded edge features.
+    update_method : {"simple", "triple"}, default="simple"
+        method of node and edge updating.
+    """
+
+    def __init__(
+        self,
+        n_node_feature: int,
+        n_edge_feature: int,
+        update_method="simple",
+    ) -> None:
+        super().__init__()
+        if update_method == "simple":
+            self.update_node = NodeSimpleUpdate(n_node_feature, n_edge_feature)
+            self.update_edge = EdgeSimpleUpdate(n_node_feature, n_edge_feature)
+        elif update_method == "triple":
+            self.update_node = NodeUpdate(n_node_feature, n_edge_feature)
+            self.update_edge = EdgeUpdate(n_node_feature, n_edge_feature)
+        else:
+            raise ValueError(
+                "Invalid method ({}) ! please chose method from {'simple', 'triple'}".format(
+                    update_method
+                )
+            )
+        self.method = update_method
 
     def forward(
         self,
@@ -272,7 +453,7 @@ class MessagePassing(nn.Module):
         edge_embeding: Tensor,
         nbr_idx: Tensor,
         nbr_mask: Tensor,
-        cell_offset: Tensor,
+        cell_offset=None,
     ) -> Tensor:
         """
         Calculate the updated node and edge embedding by message passing layer.
@@ -291,7 +472,7 @@ class MessagePassing(nn.Module):
             Indices of neighbors of each atom. (B x At x Nbr) of shape.
         nbr_mask : torch.Tensor
             boolean mask for neighbor positions.(B x At x Nbr) of shape.
-        cell_offset : torch.Tensor
+        cell_offset : torch.Tensor or None, default=None
             offset of atom in cell coordinates with (B x At x Nbr x 3) shape.
 
         Returns
@@ -304,14 +485,23 @@ class MessagePassing(nn.Module):
         node_embedding = self.update_node(
             node_embedding,
             edge_embeding,
-            nbr_mask,
-        )
-        edge_embeding = self.update_edge(
-            node_embedding,
-            edge_embeding,
             nbr_idx,
             nbr_mask,
-            cell_offset,
         )
+        if self.method == "simple":
+            edge_embeding = self.update_edge(
+                node_embedding,
+                edge_embeding,
+                nbr_idx,
+                nbr_mask,
+            )
+        else:
+            edge_embeding = self.update_edge(
+                node_embedding,
+                edge_embeding,
+                nbr_idx,
+                nbr_mask,
+                cell_offset,
+            )
 
         return node_embedding, edge_embeding
