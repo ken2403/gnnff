@@ -63,7 +63,7 @@ def gaussian_filter(distances, offsets, widths, centered=False):
         width values of Gaussian functions.
     centered : bool, default=False
         If True, Gaussians are centered at the origin and the offsets are used
-        to as their widths (used e.g. for angular functions).
+        to as their widths.
 
     Returns
     -------
