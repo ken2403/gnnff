@@ -175,7 +175,7 @@ class NodeSimpleUpdate(nn.Module):
         nbh = nbr_idx.view(B, At * Nbr, 1)
         nbh = nbh.expand(-1, -1, n_edge_feature)
         y = torch.gather(y, 1, nbh)
-        y = y.view(B, At, Nbr, n_node_feature)
+        y = y.view(B, At, Nbr, n_edge_feature)
 
         # element-wise multiplication, sum of all neighbor and Dense layer
         y = y * edge_embedding
