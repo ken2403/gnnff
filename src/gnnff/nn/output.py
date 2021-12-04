@@ -3,7 +3,7 @@ from torch.functional import tensordot
 import torch.nn as nn
 
 from gnnff.data.keys import Keys
-from gnnff.nn.activation import shifted_softplus
+from gnnff.nn.functional import shifted_softplus
 from gnnff.nn.base import Dense
 
 
