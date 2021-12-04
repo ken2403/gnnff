@@ -226,6 +226,13 @@ class EdgeUpdate(nn.Module):
         # elemet-wise multiplication with gate on three-body interaction
         three_body_embedding = three_body_gate * three_body_extract
         # TODO: nbr_kに対してnbr_maskを適用するか否か
+        nbr_mask = nbr_mask.unsqueeze(2).expand(B, At, Nbr, Nbr)
+        nbr_mask = (
+            nbr_mask.flatten(start_dim=2)[:, :, 1:]
+            .view(B, At, Nbr - 1, Nbr + 1)[:, :, :, :-1]
+            .reshape(B, At, Nbr, Nbr - 1)
+        )
+        three_body_embedding = three_body_embedding * nbr_mask[..., None]
         three_body_embedding = torch.sum(three_body_embedding, dim=3)
         three_body_embedding = self.bn_three_body(
             three_body_embedding.view(-1, n_edge_feature)
