@@ -18,7 +18,7 @@ class GNNFF(nn.Module):
         dimension of the embedded edge features.
     n_message_passing : int, default=3
         number of message passing layers.
-    cutoff : float, default=8.0
+    cutoff : float, default=6.0
         cutoff radius.
     gaussian_filter_end : float or None, default=None
         center of last Gaussian function.
