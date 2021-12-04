@@ -139,6 +139,6 @@ class GNNFF(nn.Module):
             result[self.properties["energy"]] = self.output_energy(inputs)
 
         if self.return_intermediate:
-            result["node_list"], result["last_edge_list"] = node_list, edge_list
+            result["node_list"], result["edge_list"] = node_list, edge_list
             return result
         return result
