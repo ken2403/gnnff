@@ -97,7 +97,7 @@ class GraphToFeatures(nn.Module):
             atomic node embedding tensors with (B x At x n_node_feature) shape.
         last_edge_embedding : torch.Tensor
             inter atomic edge embedding tensors with (B x At x Nbr x n_edge_feature) shape.
-        2 lists of torch.Tensor
+        2 lists of numpy.ndarray
             intermediate node and edge embeddings, if return_intermediate=True was used.
         """
         # get tensors from input dictionary
