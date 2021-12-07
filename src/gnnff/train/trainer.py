@@ -207,7 +207,7 @@ class Trainer:
                 train_iter = self.train_loader
 
                 self._model.train()
-                if device == torch.device("cuda"):
+                if device.type == "cuda":
                     scaler = torch.cuda.amp.GradScaler()
                 for train_batch in train_iter:
                     self.optimizer.zero_grad()
@@ -235,7 +235,7 @@ class Trainer:
                                     reg = reg + torch.norm(param, 1) ** 2
                         loss = loss + lambda_ * reg
 
-                    if device == torch.device("cuda"):
+                    if device.type == "cuda":
                         # Scales loss.  Calls backward() on scaled loss to create scaled gradients.
                         scaler.scale(loss).backward()
                         # scaler.step() first unscales the gradients of the optimizer's assigned params.
