@@ -14,7 +14,7 @@ class GNNFF(nn.Module):
     ----------
     n_node_feature : int, default=128
         dimension of the embedded node features.
-    n_edge_feature : int, default=128
+    n_edge_feature : int, default=20
         dimension of the embedded edge features.
     n_message_passing : int, default=3
         number of message passing layers.
@@ -22,8 +22,8 @@ class GNNFF(nn.Module):
         cutoff radius.
     gaussian_filter_end : float or None, default=None
         center of last Gaussian function.
-    update_method : {"simple", "triple"}, default="simple"
-        method of node and edge updating.
+    trainble_gaussian : bool, default=False
+
     share_weights : bool, default=False
         if True, share the weights across all message passing layers.
     return_intermid : bool, default=False
@@ -58,11 +58,11 @@ class GNNFF(nn.Module):
     def __init__(
         self,
         n_node_feature: int = 128,
-        n_edge_feature: int = 128,
+        n_edge_feature: int = 20,
         n_message_passing: int = 3,
         cutoff: float = 6.0,
         gaussian_filter_end: float = None,
-        update_method: str = "simple",
+        trainable_gaussian: bool = False,
         share_weights: bool = False,
         return_intermid: bool = False,
         output_activation=shifted_softplus,
@@ -78,7 +78,7 @@ class GNNFF(nn.Module):
             n_edge_feature=n_edge_feature,
             n_message_passing=n_message_passing,
             gaussian_filter_end=gaussian_filter_end,
-            update_method=update_method,
+            trainable_gaussian=trainable_gaussian,
             share_weights=share_weights,
             return_intermid=return_intermid,
         )
@@ -108,7 +108,7 @@ class GNNFF(nn.Module):
 
     def forward(self, inputs: dict) -> Tensor:
         """
-        Forward GNNFF output through output_module.
+        layer output of GNNFF.
 
         Parameters
         ----------
@@ -134,7 +134,7 @@ class GNNFF(nn.Module):
                 inputs["last_node_embedding"],
                 inputs["last_edge_embedding"],
             ) = self.gnn(inputs)
-        # from node and edge, calculateing the propety.
+        # from embedding node and edge, calculating the propety.
         result = {}
         if "forces" in self.properties:
             result[self.properties["forces"]] = self.output_force(inputs)
