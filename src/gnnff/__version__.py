@@ -1,4 +1,4 @@
-__version_info__ = (0, 2, 2)
+__version_info__ = (0, 2, 3)
 __version__ = ".".join(map(str, __version_info__))
 
 """
@@ -30,5 +30,8 @@ __version__ = ".".join(map(str, __version_info__))
     - (GraphtoFeature)initial_embeddingに対してnbrmaskを外す
     - (get_node_k)indexのやり方変更、nbr_maskをindexを利用して適用
 - (0.2.2)
-    - simple predictionを実装
+    - implementation of simple prediction.
+- (0.2.3)
+    - remove simple implementation (because of bad result)
+    - add "trainble_gaussian" parameter.
 """
