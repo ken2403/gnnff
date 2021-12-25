@@ -23,8 +23,8 @@ class GraphToFeatures(nn.Module):
         number of message passing layers.
     gaussian_filter_end : float, default=5.5
         center of last Gaussian function.
-    update_method : {"simple", "triple"}, default="simple"
-        method of node and edge updating.
+    trainable_gaussian : bool, default=False
+
     share_weights : bool, default=False
         if True, share the weights across all message passing layers.
     return_intermid : bool, default=False
@@ -38,7 +38,7 @@ class GraphToFeatures(nn.Module):
         n_edge_feature: int,
         n_message_passing: int = 3,
         gaussian_filter_end: float = 5.5,
-        update_method: str = "simple",
+        trainable_gaussian: bool = False,
         share_weights: bool = False,
         return_intermid: bool = False,
     ) -> None:
@@ -50,6 +50,7 @@ class GraphToFeatures(nn.Module):
             stop=gaussian_filter_end,
             n_gaussian=n_edge_feature,
             centered=False,
+            trainable=trainable_gaussian,
         )
         # layers for computing some message passing layers.
         if share_weights:
@@ -58,7 +59,6 @@ class GraphToFeatures(nn.Module):
                     MessagePassing(
                         n_node_feature=n_node_feature,
                         n_edge_feature=n_edge_feature,
-                        update_method=update_method,
                     )
                 ]
                 * n_message_passing
@@ -69,14 +69,12 @@ class GraphToFeatures(nn.Module):
                     MessagePassing(
                         n_node_feature=n_node_feature,
                         n_edge_feature=n_edge_feature,
-                        update_method=update_method,
                     )
                     for _ in range(n_message_passing)
                 ]
             )
         # set the attribute
         self.return_intermid = return_intermid
-        self.update_method = update_method
 
     def forward(self, inputs: dict) -> Tensor:
         """
@@ -104,14 +102,11 @@ class GraphToFeatures(nn.Module):
         atomic_numbers = inputs[Keys.Z]
         nbr_idx = inputs[Keys.neighbors]
         nbr_mask = inputs[Keys.neighbor_mask]
+        cell_offset = inputs[Keys.cell_offset]
         # atom_mask = inputs[Keys.atom_mask]
 
         # get inter atomic distances and cell_offsets.
         r_ij = inputs[Keys.distances]
-        if self.update_method == "triple":
-            cell_offset = inputs[Keys.cell_offset]
-        else:
-            cell_offset = None
 
         # get initial embedding
         node_embedding = self.initial_node_embedding(atomic_numbers)

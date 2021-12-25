@@ -422,30 +422,16 @@ class MessagePassing(nn.Module):
         dimension of the embedded node features.
     n_edge_feature : int
         dimension of the embedded edge features.
-    update_method : {"simple", "triple"}, default="simple"
-        method of node and edge updating.
     """
 
     def __init__(
         self,
         n_node_feature: int,
         n_edge_feature: int,
-        update_method="simple",
     ) -> None:
         super().__init__()
-        if update_method == "simple":
-            self.update_node = NodeSimpleUpdate(n_node_feature, n_edge_feature)
-            self.update_edge = EdgeSimpleUpdate(n_node_feature, n_edge_feature)
-        elif update_method == "triple":
-            self.update_node = NodeUpdate(n_node_feature, n_edge_feature)
-            self.update_edge = EdgeUpdate(n_node_feature, n_edge_feature)
-        else:
-            raise ValueError(
-                "Invalid method ({}) ! please chose method from {'simple', 'triple'}".format(
-                    update_method
-                )
-            )
-        self.method = update_method
+        self.update_node = NodeUpdate(n_node_feature, n_edge_feature)
+        self.update_edge = EdgeUpdate(n_node_feature, n_edge_feature)
 
     def forward(
         self,
@@ -488,20 +474,12 @@ class MessagePassing(nn.Module):
             nbr_idx,
             nbr_mask,
         )
-        if self.method == "simple":
-            edge_embeding = self.update_edge(
-                node_embedding,
-                edge_embeding,
-                nbr_idx,
-                nbr_mask,
-            )
-        else:
-            edge_embeding = self.update_edge(
-                node_embedding,
-                edge_embeding,
-                nbr_idx,
-                nbr_mask,
-                cell_offset,
-            )
+        edge_embeding = self.update_edge(
+            node_embedding,
+            edge_embeding,
+            nbr_idx,
+            nbr_mask,
+            cell_offset,
+        )
 
         return node_embedding, edge_embeding

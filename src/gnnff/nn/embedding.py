@@ -94,7 +94,7 @@ def gaussian_filter(distances, offsets, widths, centered=False):
 class EdgeEmbedding(nn.Module):
     """
     Initial edge embedding layer.
-    From inter-atomic distaces, calculates the edge embedding tensor.
+    From interatomic distaces, calculates the edge embedding tensor.
 
     Attributes
     ----------
@@ -102,25 +102,32 @@ class EdgeEmbedding(nn.Module):
         center of first Gaussian function, :math:`\mu_0`.
     stop : float, default=6.0
         center of last Gaussian function, :math:`\mu_{N_g}`
-    n_gaussians : int, default=100
+    n_gaussians : int, default=20
         total number of Gaussian functions, :math:`N_g`.
     centered : bool, default=False
         If False, Gaussian's centered values are varied at the offset values and the width value is constant.
+    trainable : bool, default=False
+
     """
 
     def __init__(
         self,
         start: float = 0.0,
         stop: float = 6.0,
-        n_gaussian: int = 100,
+        n_gaussian: int = 20,
         centered: bool = False,
+        trainable: bool = False,
     ) -> None:
         super().__init__()
         offsets = torch.linspace(start=start, end=stop, steps=n_gaussian)
         widths = torch.FloatTensor((offsets[1] - offsets[0]) * torch.ones_like(offsets))
-        self.register_buffer("offset", offsets, persistent=True)
-        self.register_buffer("width", widths, persistent=True)
         self.centered = centered
+        if trainable:
+            self.width = nn.Parameter(widths)
+            self.offset = nn.Parameter(offsets)
+        else:
+            self.register_buffer("width", widths)
+            self.register_buffer("offset", offsets)
 
     def forward(self, distances: Tensor) -> Tensor:
         """
