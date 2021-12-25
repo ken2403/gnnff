@@ -31,6 +31,6 @@
     "predict_property": {"forces": "forces"},
     "regularization": "l1",
     "regularization_lambda": 0.01,
-    "share_weights": false,
-    "update_method": "simple"
+    "trainable_gaussian": true,
+    "share_weights": false
 }

@@ -41,7 +41,7 @@ def main(args):
             n_message_passing=args.n_message_passing,
             cutoff=args.cutoff,
             gaussian_filter_end=args.gaussian_filter_end,
-            update_method=args.update_method,
+            trainable_gaussian=args.trainable_gaussian,
             share_weights=args.share_weights,
             return_intermid=False,
             properties=args.predict_property,
