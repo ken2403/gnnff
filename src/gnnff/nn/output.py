@@ -55,7 +55,7 @@ class ForceMapping(nn.Module):
         self.out_net = nn.Sequential(*layers)
         self.property_name = property_name
 
-    def forward(self, inputs: dict) -> Tensor:
+    def forward(self, last_edge_embedding: Tensor, unit_vecs: Tensor) -> Tensor:
         """
         Calculates the inter atomic forces.
 
@@ -65,9 +65,10 @@ class ForceMapping(nn.Module):
 
         Parameters
         ----------
-        inputs : dict of torch.Tensor
-            dictionary of property tensors in unit cell.
-            This should retain calculated embedding.
+        last_edge_embedding : torch.Tensor
+            calculated edge embedding tensor of (B x At x Nbr x n_edge_features) shape.
+        unit_vecs : torch.Tensor
+            unit vecs of each edge.
 
         Returns
         -------
@@ -75,10 +76,9 @@ class ForceMapping(nn.Module):
             predicting inter atomic forces for each atoms. (B x At x 3) shape.
         """
         # calculate force_magnitude from last edge_embedding
-        force_magnitude = self.out_net(inputs["last_edge_embedding"])
+        force_magnitude = self.out_net(last_edge_embedding)
         force_magnitude = force_magnitude.expand(-1, -1, -1, 3)
         # predict inter atpmic forces by multiplying the unit vectors
-        unit_vecs = inputs[Keys.unit_vecs]
         preditcted_forces = force_magnitude * unit_vecs
         # summation of all neighbors effection
         preditcted_forces = preditcted_forces.sum(dim=2)
@@ -87,7 +87,7 @@ class ForceMapping(nn.Module):
 
 class EnergyMapping(nn.Module):
     """
-    From node and edge embedding tensor, calculating the total energy.
+    From node embedding tensor, calculating the total energy.
 
     Attributes
     ----------
@@ -107,14 +107,13 @@ class EnergyMapping(nn.Module):
     def __init__(
         self,
         n_node_feature: int,
-        n_edge_feature: int,
         n_layers: int = 2,
         activation=shifted_softplus,
         property_name: str = "energy",
     ) -> None:
         super().__init__()
         n_neurons_list = []
-        c_neurons = n_edge_feature
+        c_neurons = n_node_feature
         for _ in range(n_layers):
             n_neurons_list.append(c_neurons)
             c_neurons = max(1, c_neurons // 2)
@@ -128,20 +127,25 @@ class EnergyMapping(nn.Module):
         self.out_net = nn.Sequential(*layers)
         self.property_name = property_name
 
-    def forward(self, inputs: dict) -> Tensor:
+    def forward(self, last_node_embedding: Tensor) -> Tensor:
         """
         Calculates the total energy of the cell.
 
         B   :  Batch size
+        At  :  Total number of atoms in the batch
 
         Parameters
         ----------
-        inputs : dict of torch.Tensor
-            dictionary of property tensors in unit cell.
-            This should retain calculated node and edge embedding.
+        last_node_embedding : torch.Tensor
+            calculated node embedding of (B x At x Nbr x n_node_features) shape.
 
         Returns
         -------
         predicted_energy : torch.Tensor
-            predicting total energy for each atoms. (B x 1) shape.
+            predicting total energy with (B x 1) shape.
         """
+        # calculate atomic energy from last node_embedding
+        atomic_energy = self.out_net(last_node_embedding)
+        # sumation of all atomic energy in batch
+        preditcted_energy = atomic_energy.sum(dim=1)
+        return preditcted_energy
