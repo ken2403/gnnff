@@ -34,7 +34,7 @@ class Trainer:
         hooks to customize training process.
     loss_is_normalized : bool, default=True
         if True, the loss per data point will be reported. Otherwise, the accumulated loss is reported.
-    regularization : str or None, default=None
+    regularization : str of {'l1' or 'l2'} or None, default=None
         define the regularization method. Choose from 'l1' or 'l2'.
 
     References
