@@ -104,7 +104,6 @@ class GraphToFeatures(nn.Module):
         atomic_numbers = inputs[Keys.Z]
         nbr_idx = inputs[Keys.neighbors]
         nbr_mask = inputs[Keys.neighbor_mask]
-        cell_offset = inputs[Keys.cell_offset]
         # atom_mask = inputs[Keys.atom_mask]
 
         # get inter atomic distances and cell_offsets.

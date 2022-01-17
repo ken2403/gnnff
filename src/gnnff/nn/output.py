@@ -28,8 +28,6 @@ class ForceMapping(nn.Module):
     activation : collable or None, default=gnnff.nn.activation.shifted_softplus
         activation function. All hidden layers would the same activation function
         except the output layer that does not apply any activation function.
-    property_name : str, default="forces"
-        name of the output property.
     """
 
     def __init__(
@@ -37,7 +35,6 @@ class ForceMapping(nn.Module):
         n_edge_feature: int,
         n_layers: int = 2,
         activation=shifted_softplus,
-        property_name: str = "forces",
     ) -> None:
         super().__init__()
         n_neurons_list = []
@@ -53,7 +50,6 @@ class ForceMapping(nn.Module):
         ]
         layers.append(Dense(n_neurons_list[-2], n_neurons_list[-1], activation=None))
         self.out_net = nn.Sequential(*layers)
-        self.property_name = property_name
 
     def forward(self, last_edge_embedding: Tensor, unit_vecs: Tensor) -> Tensor:
         """
@@ -100,8 +96,6 @@ class EnergyMapping(nn.Module):
     activation : collable or None, default=gnnff.nn.activation.shifted_softplus
         activation function. All hidden layers would the same activation function
         except the output layer that does not apply any activation function.
-    property_name : str, default="energy"
-        name of the output property.
     """
 
     def __init__(
@@ -109,7 +103,6 @@ class EnergyMapping(nn.Module):
         n_node_feature: int,
         n_layers: int = 2,
         activation=shifted_softplus,
-        property_name: str = "energy",
     ) -> None:
         super().__init__()
         n_neurons_list = []
@@ -125,7 +118,6 @@ class EnergyMapping(nn.Module):
         ]
         layers.append(Dense(n_neurons_list[-2], n_neurons_list[-1], activation=None))
         self.out_net = nn.Sequential(*layers)
-        self.property_name = property_name
 
     def forward(self, last_node_embedding: Tensor) -> Tensor:
         """
