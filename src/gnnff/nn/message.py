@@ -85,8 +85,6 @@ class NodeUpdate(nn.Module):
             dim=3,
         )
 
-        # # apply neighbor mask, if there are no neighbor, padding with 0
-        # c1[nbr_mask == 0] = 0.0
         # fully connected layter
         c1 = self.fc(c1)
         # calculate the gate and extract features
@@ -97,6 +95,7 @@ class NodeUpdate(nn.Module):
         nbr_sumed = nbr_gate * nbr_extract
         # apply neighbor mask, if there are no neighbor, padding with 0
         nbr_sumed = nbr_sumed * nbr_mask[..., None]
+
         nbr_sumed = torch.sum(nbr_sumed, dim=2)
         nbr_sumed = self.bn(nbr_sumed.view(-1, n_node_feature)).view(
             B, At, n_node_feature
