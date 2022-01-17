@@ -177,7 +177,7 @@ class EdgeUpdate(nn.Module):
         # element-wise multiplication of node_i and node_j
         node_i = node_embedding.unsqueeze(2).expand(B, At, Nbr, n_node_feature)
         node_j = torch.gather(node_embedding, dim=1, index=nbh).view(B, At, Nbr, -1)
-        node_j[nbr_mask == 0] = 0.0
+        node_j = node_j * nbr_mask[..., None]
         c2 = node_i * node_j
 
         # fully connected layter with c2
