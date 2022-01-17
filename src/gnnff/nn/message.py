@@ -46,11 +46,10 @@ class NodeUpdate(nn.Module):
         self,
         node_embedding: Tensor,
         edge_embedding: Tensor,
-        nbr_idx: Tensor,
         nbr_mask: Tensor,
     ) -> Tensor:
         """
-        Calculate the updated node embedding.
+        Update the node embedding.
 
         B   :  Batch size
         At  :  Total number of atoms in the batch
@@ -64,8 +63,6 @@ class NodeUpdate(nn.Module):
             batch of edge embedding tensor of (B x At x Nbr x n_edge_feuture) shape.
         nbr_mask : torch.Tensor
             boolean mask for neighbor positions.(B x At x Nbr) of shape.
-        nbr_idx : torch.Tensor
-            Indices of neighbors of each atom. (B x At x Nbr) of shape.
 
         Returns
         -------
@@ -110,87 +107,10 @@ class NodeUpdate(nn.Module):
         return node_embedding
 
 
-class NodeSimpleUpdate(nn.Module):
-    """
-    Updated the node embedding tensor from the previous node and edge embedding.
-    Using simple method.(ref [1])
-
-    Attributes
-    ----------
-    n_node_feature : int
-        dimension of the embedded node features.
-    n_edge_feature : int
-        dimension of the embedded edge features.
-
-    References
-    ----------
-    ..[1] Schütt, Sauceda, Kindermans, Tkatchenko, Müller:
-       "SchNet - a deep learning architecture for molceules and materials."
-       The Journal of Chemical Physics 148 (24), 241722. 2018.
-    """
-
-    def __init__(
-        self,
-        n_node_feature: int,
-        n_edge_feature: int,
-    ) -> None:
-        super().__init__()
-        self.in2f = Dense(n_node_feature, n_edge_feature, activation=None)
-        self.f2out = Dense(n_edge_feature, n_node_feature, activation=shifted_softplus)
-
-    def forward(
-        self,
-        node_embedding: Tensor,
-        edge_embedding: Tensor,
-        nbr_idx: Tensor,
-        nbr_mask: Tensor,
-    ) -> Tensor:
-        """
-        Calculate the updated node embedding.
-
-        B   :  Batch size
-        At  :  Total number of atoms in the batch
-        Nbr :  Total number of neighbors of each atom
-
-        Parameters
-        ----------
-        node_embedding : torch.Tensor
-            batch of node embedding tensor of (B x At x n_node_feature) shape.
-        edge_embedding : torch.Tensor
-            batch of edge embedding tensor of (B x At x Nbr x n_edge_feuture) shape.
-        nbr_mask : torch.Tensor
-            boolean mask for neighbor positions.(B x At x Nbr) of shape.
-        nbr_idx : torch.Tensor
-            Indices of neighbors of each atom. (B x At x Nbr) of shape.
-
-        Returns
-        -------
-        y : torch.Tensor
-            updated node embedding tensor of (B x At x n_node_feature) shape.
-        """
-        B, At, Nbr, n_edge_feature = edge_embedding.size()
-        _, _, n_node_feature = node_embedding.size()
-
-        y = self.in2f(node_embedding)
-        nbh = nbr_idx.view(B, At * Nbr, 1)
-        nbh = nbh.expand(-1, -1, n_edge_feature)
-        y = torch.gather(y, 1, nbh)
-        y = y.view(B, At, Nbr, n_edge_feature)
-
-        # element-wise multiplication, sum of all neighbor and Dense layer
-        y = y * edge_embedding
-        y = y * nbr_mask[..., None]
-        y = torch.sum(y, dim=2)
-        y = self.f2out(y)
-        # ResNet
-        y = y + node_embedding
-
-        return y
-
-
 class EdgeUpdate(nn.Module):
     """
-    Updated the edge embedding tensor from the new node embedding and the previous edge embedding.
+    Updated the edge embedding tensor from the new node embedding
+    and the previous edge embedding.
 
     Attributes
     ----------
@@ -207,16 +127,11 @@ class EdgeUpdate(nn.Module):
     ) -> None:
         super().__init__()
         self.fc_two_body = Dense(n_node_feature, 2 * n_edge_feature, activation=None)
-        self.bn_two_body = nn.BatchNorm1d(n_edge_feature)
+        # self.bn_two_body = nn.BatchNorm1d(n_edge_feature)
         self.get_node_k = GetNodeK()
-        # self.get_edge_jk = GetEdgeJK()
-        # self.fc_three_body = Dense(
-        #     3 * n_node_feature + 2 * n_edge_feature,
-        #     2 * n_edge_feature,
-        #     activation=None,
-        # )
+        self.get_edge_jk = GetEdgeJK()
         self.fc_three_body = Dense(
-            3 * n_node_feature + n_edge_feature,
+            3 * n_node_feature + 2 * n_edge_feature,
             2 * n_edge_feature,
             activation=None,
         )
@@ -230,7 +145,6 @@ class EdgeUpdate(nn.Module):
         edge_embedding: Tensor,
         nbr_idx: Tensor,
         nbr_mask: Tensor,
-        cell_offset: Tensor = None,
     ) -> Tensor:
         """
         Calculate the updated edge embedding.
@@ -249,8 +163,6 @@ class EdgeUpdate(nn.Module):
             Indices of neighbors of each atom. (B x At x Nbr) of shape.
         nbr_mask : torch.Tensor
             boolean mask for neighbor positions.(B x At x Nbr) of shape.
-        cell_offset : torch.Tensor or None, default=None
-            offset of atom in cell coordinates with (B x At x Nbr x 3) shape.
 
         Returns
         -------
@@ -267,11 +179,8 @@ class EdgeUpdate(nn.Module):
         node_i = node_embedding.unsqueeze(2).expand(B, At, Nbr, n_node_feature)
         node_j = torch.gather(node_embedding, dim=1, index=nbh).view(B, At, Nbr, -1)
         node_j[nbr_mask == 0] = 0.0
-        # node_j = node_j * nbr_mask[..., None],こっちはいけるか（0mulになるのでbackwardできないかも）
         c2 = node_i * node_j
 
-        # # apply neighbor mask, if there are no neighbor, padding with 0
-        # c2[nbr_mask == 0] = 0.0
         # fully connected layter with c2
         c2 = self.fc_two_body(c2)
         # calculate the gate and extract features with two-body interaction
@@ -280,35 +189,27 @@ class EdgeUpdate(nn.Module):
         two_body_extract = self.tanh(two_body_extract)
         # elemet-wise multiplication with gate on two-body interaction
         two_body_embedding = two_body_gate * two_body_extract
-        two_body_embedding = self.bn_two_body(
-            two_body_embedding.view(-1, n_edge_feature)
-        ).view(B, At, Nbr, n_edge_feature)
+        # two_body_embedding = self.bn_two_body(
+        #     two_body_embedding.view(-1, n_edge_feature)
+        # ).view(B, At, Nbr, n_edge_feature)
 
         # make c3_ijk tensor. (B x At x Nbr x Nbr x 3*n_node_feature + 2*n_edge_feature) of shape.
-        edge_ij = edge_embedding.unsqueeze(3).expand(
-            B, At, Nbr, Nbr - 1, n_edge_feature
-        )
+        edge_ij = edge_embedding.unsqueeze(3).expand(B, At, Nbr, Nbr, n_edge_feature)
         c3 = torch.cat(
             [  # node_i
-                node_i.unsqueeze(3).expand(B, At, Nbr, Nbr - 1, n_node_feature),
+                node_i.unsqueeze(3).expand(B, At, Nbr, Nbr, n_node_feature),
                 # node_j
-                node_j.unsqueeze(3).expand(B, At, Nbr, Nbr - 1, n_node_feature),
+                node_j.unsqueeze(3).expand(B, At, Nbr, Nbr, n_node_feature),
                 # node_k
-                self.get_node_k(node_embedding, nbr_idx, nbr_mask),
+                self.get_node_k(node_embedding, nbr_idx),
                 # edge_ij
                 edge_ij,
                 # edge_jk
-                # self.get_edge_jk(edge_embedding, nbr_idx, cell_offset),
+                self.get_edge_jk(edge_embedding, nbr_idx),
             ],
             dim=4,
         )
 
-        # # apply neighbor mask to neighbor j, if there are no neighbor, padding with 0
-        # c3[nbr_mask == 0] = 0.0
-        # # apply neighbor mask to neighbor k, if there are no neighbor, padding with 0
-        # nbr_mask = nbr_mask.unsqueeze(-1).expand(B, At, Nbr, c3.size()[-1])
-        # nbr_mask = nbr_mask.unsqueeze(2).expand(B, At, Nbr, Nbr - 1, -1)
-        # c3[nbr_mask == 0] = 0
         # fully connected layter with c3
         c3 = self.fc_three_body(c3)
         # calculate the gate and extract features with three-body interaction
@@ -317,14 +218,17 @@ class EdgeUpdate(nn.Module):
         three_body_extract = self.tanh(three_body_extract)
         # elemet-wise multiplication with gate on three-body interaction
         three_body_embedding = three_body_gate * three_body_extract
-        # TODO: nbr_kに対してnbr_maskを適用するか否か
-        nbr_mask = nbr_mask.unsqueeze(2).expand(B, At, Nbr, Nbr)
-        nbr_mask = (
-            nbr_mask.flatten(start_dim=2)[:, :, 1:]
-            .view(B, At, Nbr - 1, Nbr + 1)[:, :, :, :-1]
-            .reshape(B, At, Nbr, Nbr - 1)
+
+        # apply neighbor mask
+        # get j's neighbor masks. (B x At x Nbr x Nbr) of shape.
+        nbr_idx_expand = (
+            nbr_idx.unsqueeze(3).expand(B, At, Nbr, Nbr).reshape(B, At * Nbr, Nbr)
         )
-        three_body_embedding = three_body_embedding * nbr_mask[..., None]
+        nbr_mask_expand = torch.gather(nbr_mask, 1, nbr_idx_expand).view(
+            B, At, Nbr, Nbr
+        )
+        three_body_embedding = three_body_embedding * nbr_mask_expand[..., None]
+
         three_body_embedding = torch.sum(three_body_embedding, dim=3)
         three_body_embedding = self.bn_three_body(
             three_body_embedding.view(-1, n_edge_feature)
@@ -335,81 +239,6 @@ class EdgeUpdate(nn.Module):
             edge_embedding + two_body_embedding + three_body_embedding
         )
         return edge_embedding
-
-
-class EdgeSimpleUpdate(nn.Module):
-    """
-    Updated the edge embedding tensor from the new node embedding and the previous edge embedding.
-    Using simple method(without triple info).
-
-    Attributes
-    ----------
-    n_node_feature : int
-        dimension of the embedded node features.
-    n_edge_feature : int
-        dimension of the embedded edge features.
-    """
-
-    def __init__(
-        self,
-        n_node_feature: int,
-        n_edge_feature: int,
-    ) -> None:
-        super().__init__()
-        self.fc = Dense(2 * n_node_feature + n_edge_feature, 2 * n_edge_feature)
-        self.sigmoid = nn.Sigmoid()
-        self.tanh = nn.Tanh()
-        self.softplus = ShiftedSoftplus()
-
-    def forward(
-        self,
-        node_embedding: Tensor,
-        edge_embedding: Tensor,
-        nbr_idx: Tensor,
-        nbr_mask: Tensor,
-    ) -> Tensor:
-        """
-        Calculate the updated edge embedding.
-
-        B   :  Batch size
-        At  :  Total number of atoms in the batch
-        Nbr :  Total number of neighbors of each atom
-
-        Parameters
-        ----------
-        node_embedding : torch.Tensor
-            batch of node embedding tensor of (B x At x n_node_feature) shape.
-        edge_embedding : torch.Tensor
-            batch of edge embedding tensor of (B x At x Nbr x n_edge_feuture) shape.
-        nbr_idx : torch.Tensor
-            Indices of neighbors of each atom. (B x At x Nbr) of shape.
-        nbr_mask : torch.Tensor
-            boolean mask for neighbor positions.(B x At x Nbr) of shape.
-
-        Returns
-        -------
-        edge_embedding : torch.Tensor
-            updated edge embedding tensor of (B x At x Nbr x n_edge_feuture) shape.
-        """
-        B, At, Nbr, _ = edge_embedding.size()
-        _, _, n_node_feature = node_embedding.size()
-
-        nbh = nbr_idx.reshape(-1, At * Nbr, 1)
-        nbh = nbh.expand(-1, -1, n_node_feature)
-        # element-wise multiplication of node_i and node_j
-        node_i = node_embedding.unsqueeze(2).expand(B, At, Nbr, n_node_feature)
-        node_j = torch.gather(node_embedding, dim=1, index=nbh).view(B, At, Nbr, -1)
-        node_j = node_j * nbr_mask[..., None]
-
-        y = torch.cat([node_i, node_j, edge_embedding], dim=3)
-        y = self.fc(y)
-        nbr_gate, nbr_extract = y.chunk(2, dim=3)
-        nbr_gate = self.sigmoid(nbr_gate)
-        nbr_extract = self.tanh(nbr_extract)
-        update_embedding = nbr_gate * nbr_extract
-        update_embedding = self.softplus(edge_embedding + update_embedding)
-
-        return update_embedding
 
 
 class MessagePassing(nn.Module):
@@ -439,7 +268,6 @@ class MessagePassing(nn.Module):
         edge_embeding: Tensor,
         nbr_idx: Tensor,
         nbr_mask: Tensor,
-        cell_offset=None,
     ) -> Tensor:
         """
         Calculate the updated node and edge embedding by message passing layer.
@@ -471,7 +299,6 @@ class MessagePassing(nn.Module):
         node_embedding = self.update_node(
             node_embedding,
             edge_embeding,
-            nbr_idx,
             nbr_mask,
         )
         edge_embeding = self.update_edge(
@@ -479,7 +306,6 @@ class MessagePassing(nn.Module):
             edge_embeding,
             nbr_idx,
             nbr_mask,
-            cell_offset,
         )
 
         return node_embedding, edge_embeding
