@@ -1,4 +1,4 @@
-__version_info__ = (0, 2, 3)
+__version_info__ = (1, 0, 0)
 __version__ = ".".join(map(str, __version_info__))
 
 """
@@ -10,7 +10,7 @@ __version__ = ".".join(map(str, __version_info__))
     - neighborのない箇所の距離を0に戻す(loaderとの差異をなくすため)
     - nbr_maskをupdated_edgeに適用することで学習の際の負担を減らす
 - (0.0.4)
-    - うまく学習できないので,　'nbr_maskをupdated_edgeに適用すること'　これをやめる
+    - うまく学習できないので, 'nbr_maskをupdated_edgeに適用すること'をやめる
 - (0.0.5)
     - batchnorm を減らす
     - 毎回のmessageにresidual netを追加
@@ -34,4 +34,7 @@ __version__ = ".".join(map(str, __version_info__))
 - (0.2.3)
     - remove simple implementation (because of bad result)
     - add "trainble_gaussian" parameter.
+
+- (1.0.0)
+    - complete implementation
 """
