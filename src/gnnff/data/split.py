@@ -35,7 +35,7 @@ def train_test_split(dataset, num_train, num_val, seed=0, split_path=None):
         split_path = os.path.abspath(split_path)
         split_file = os.path.join(split_path, "split.npz")
         if os.path.exists(split_file):
-            file = np.load(split_path)
+            file = np.load(split_file)
             train_idx = file["train_idx"].tolist()
             val_idx = file["val_idx"].tolist()
             test_idx = file["test_idx"].tolist()
