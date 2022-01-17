@@ -91,18 +91,16 @@ class GNNFF(nn.Module):
                 n_edge_feature,
                 n_output_layers,
                 activation=output_activation,
-                property_name=properties["forces"],
             )
         if properties["energy"] is not None:
             self.output_energy = EnergyMapping(
                 n_node_feature,
                 n_output_layers,
                 activation=output_activation,
-                property_name=properties["energy"],
             )
         if properties["forces"] is None and properties["energy"] is None:
             raise OutputModuleError(
-                "Invalid property key ({})! Please set the property key from 'energy' or 'forces'.".format(
+                "Invalid property key ({})! Please set the property key from 'forces' or 'energy'.".format(
                     properties.keys()
                 )
             )
@@ -140,7 +138,7 @@ class GNNFF(nn.Module):
         result = {}
         if self.properties["forces"] is not None:
             result[self.properties["forces"]] = self.output_force(
-                inputs["last_node_embedding"], inputs[Keys.unit_vecs]
+                inputs["last_edge_embedding"], inputs[Keys.unit_vecs]
             )
         elif self.properties["energy"] is not None:
             result[self.properties["energy"]] = self.output_energy(
