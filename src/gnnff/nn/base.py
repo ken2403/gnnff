@@ -25,7 +25,6 @@ class Dense(nn.Linear):
         activation function after calculating the linear layer.
     weight_init : collable, default=torch.nn.init.xavier_uniform_
     bias_init : collable, default=torch.nn.init.constant_
-
     """
 
     def __init__(

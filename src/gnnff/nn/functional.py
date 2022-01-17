@@ -2,6 +2,7 @@ import numpy as np
 from torch import Tensor
 import torch.nn.functional as F
 
+
 __all__ = ["softplus", "shifted_softplus"]
 
 
