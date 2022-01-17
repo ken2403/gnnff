@@ -1,6 +1,7 @@
 from torch import Tensor
 import torch.nn as nn
 
+from gnnff.data.keys import Keys
 from gnnff.nn.gnn import GraphToFeatures
 from gnnff.nn.functional import shifted_softplus
 from gnnff.nn.output import OutputModuleError, ForceMapping, EnergyMapping
@@ -8,7 +9,8 @@ from gnnff.nn.output import OutputModuleError, ForceMapping, EnergyMapping
 
 class GNNFF(nn.Module):
     """
-    GNNFF architecture for learning inter atomic interactions of atomistic systems and predict some property.
+    GNNFF architecture for learning inter atomic interactions of atomistic systems and predict
+    inter atomic forces or total energy.
 
     Attributes
     ----------
@@ -22,8 +24,9 @@ class GNNFF(nn.Module):
         cutoff radius.
     gaussian_filter_end : float or None, default=None
         center of last Gaussian function.
+        if None, use cutoff-0.5 as gaussian_filter_end.
     trainble_gaussian : bool, default=False
-
+        If True, widths and offset of gaussian_filter are adjusted during training.
     share_weights : bool, default=False
         if True, share the weights across all message passing layers.
     return_intermid : bool, default=False
@@ -32,8 +35,8 @@ class GNNFF(nn.Module):
     output_activation : collable or None, default=gnnff.nn.activation.shifted_softplus
         activation function for output layers. All hidden layers would the same activation function
         except the last layer that does not apply any activation function.
-    property : dict of property and property_name, default={"forces": "forces"}
-        name of the output property. Choose "forces" or "energy".
+    property : dict of property and property_name, default={"forces": "forces", "energy": None}
+        name of the output property. Set "forces" and "energy" values.
     n_output_layers : int, default=2
         number of output layers.
 
@@ -66,7 +69,7 @@ class GNNFF(nn.Module):
         share_weights: bool = False,
         return_intermid: bool = False,
         output_activation=shifted_softplus,
-        properties: dict = {"forces": "forces"},
+        properties: dict = {"forces": "forces", "energy": None},
         n_output_layers: int = 2,
     ) -> None:
         super().__init__()
@@ -83,22 +86,21 @@ class GNNFF(nn.Module):
             return_intermid=return_intermid,
         )
         self.return_intermid = return_intermid
-        if "forces" in properties:
+        if properties["forces"] is not None:
             self.output_force = ForceMapping(
                 n_edge_feature,
                 n_output_layers,
                 activation=output_activation,
                 property_name=properties["forces"],
             )
-        elif "energy" in properties:
+        if properties["energy"] is not None:
             self.output_energy = EnergyMapping(
                 n_node_feature,
-                n_edge_feature,
                 n_output_layers,
                 activation=output_activation,
                 property_name=properties["energy"],
             )
-        else:
+        if properties["forces"] is None and properties["energy"] is None:
             raise OutputModuleError(
                 "Invalid property key ({})! Please set the property key from 'energy' or 'forces'.".format(
                     properties.keys()
@@ -136,10 +138,14 @@ class GNNFF(nn.Module):
             ) = self.gnn(inputs)
         # from embedding node and edge, calculating the propety.
         result = {}
-        if "forces" in self.properties:
-            result[self.properties["forces"]] = self.output_force(inputs)
-        elif "energy" in self.properties:
-            result[self.properties["energy"]] = self.output_energy(inputs)
+        if self.properties["forces"] is not None:
+            result[self.properties["forces"]] = self.output_force(
+                inputs["last_node_embedding"], inputs[Keys.unit_vecs]
+            )
+        elif self.properties["energy"] is not None:
+            result[self.properties["energy"]] = self.output_energy(
+                inputs["last_node_embedding"]
+            )
 
         if self.return_intermid:
             result["node_list"], result["edge_list"] = node_list, edge_list
