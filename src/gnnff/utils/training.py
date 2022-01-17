@@ -10,9 +10,8 @@ __all__ = ["get_metrics", "get_trainer", "simple_loss_fn"]
 
 
 def get_metrics(args):
-    property_keys = args.predict_property.keys()
     metrics = []
-    if "forces" in property_keys:
+    if args.predict_property["forces"] is not None:
         metrics.append(
             spk.train.metrics.MeanAbsoluteError(
                 args.predict_property["forces"],
@@ -27,7 +26,7 @@ def get_metrics(args):
                 element_wise=True,
             ),
         )
-    elif "energy" in property_keys:
+    elif args.predict_property["energy"] is not None:
         metrics.append(
             spk.train.metrics.MeanAbsoluteError(
                 args.predict_property["energy"],
@@ -100,7 +99,10 @@ def get_trainer(args, model, train_loader, val_loader, metrics):
 
 def simple_loss_fn(args):
     def loss(batch, result):
-        property_name = args.predict_property[list(args.predict_property.keys())[0]]
+        if args.predict_property["forces"] is not None:
+            property_name = args.predict_property["forces"]
+        if args.predict_property["energy"] is not None:
+            property_name = args.predict_property["energy"]
         diff = batch[property_name] - result[property_name]
         diff = diff ** 2
         err_sq = torch.mean(diff)

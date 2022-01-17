@@ -1,6 +1,6 @@
 {
     "batch_size": 5,
-    "cuda": false,
+    "cuda": true,
     "cutoff": 6.0,
     "datapath": "~/data/GaN.db",
     "eval_data" : [
