@@ -2,16 +2,12 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 from gnnff.nn.base import Dense
-from gnnff.nn.functional import shifted_softplus
-from gnnff.nn.activation import ShiftedSoftplus
 from gnnff.nn.neighbors import GetNodeK, GetEdgeJK
 
 
 __all__ = [
     "NodeUpdate",
-    "NodeSimpleUpdate",
     "EdgeUpdate",
-    "EdgeSimpleUpdate",
     "MessagePassing",
 ]
 
