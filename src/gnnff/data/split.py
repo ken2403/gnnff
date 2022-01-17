@@ -1,4 +1,5 @@
 import os
+from posixpath import split
 import numpy as np
 from torch.utils.data import Subset
 
@@ -31,6 +32,7 @@ def train_test_split(dataset, num_train, num_val, seed=0, split_path=None):
         subset with test data.
     """
     if split_path is not None:
+        split_path = os.path.abspath(split_path)
         split_file = os.path.join(split_path, "split.npz")
         if os.path.exists(split_file):
             file = np.load(split_path)
