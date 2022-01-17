@@ -106,8 +106,8 @@ class EdgeEmbedding(nn.Module):
         total number of Gaussian functions, :math:`N_g`.
     centered : bool, default=False
         If False, Gaussian's centered values are varied at the offset values and the width value is constant.
-    trainable : bool, default=False
-
+    trainable : bool, default=True
+        If True, widths and offset of gaussian_filter are adjusted during training.
     """
 
     def __init__(
@@ -116,7 +116,7 @@ class EdgeEmbedding(nn.Module):
         stop: float = 6.0,
         n_gaussian: int = 20,
         centered: bool = False,
-        trainable: bool = False,
+        trainable: bool = True,
     ) -> None:
         super().__init__()
         offsets = torch.linspace(start=start, end=stop, steps=n_gaussian)
@@ -131,7 +131,7 @@ class EdgeEmbedding(nn.Module):
 
     def forward(self, distances: Tensor) -> Tensor:
         """
-        Compute filtered distance values with Gaussian filter.
+        Compute filtered distances with Gaussian filter.
 
         B   :  Batch size
         At  :  Total number of atoms in the batch

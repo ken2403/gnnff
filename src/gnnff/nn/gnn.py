@@ -11,7 +11,7 @@ __all__ = ["GraphToFeatures"]
 
 class GraphToFeatures(nn.Module):
     """
-    Layer of combining Initial embedding and repeated message passing layers.
+    Layer of combining initial embedding blocks and repeated message passing blocks.
 
     Attributes
     ----------
@@ -23,8 +23,8 @@ class GraphToFeatures(nn.Module):
         number of message passing layers.
     gaussian_filter_end : float, default=5.5
         center of last Gaussian function.
-    trainable_gaussian : bool, default=False
-
+    trainable_gaussian : bool, default=True
+         If True, widths and offset of gaussian_filter are adjusted during training.
     share_weights : bool, default=False
         if True, share the weights across all message passing layers.
     return_intermid : bool, default=False
@@ -91,12 +91,14 @@ class GraphToFeatures(nn.Module):
 
         Returns
         -------
-        last_node_embedding : torch.Tensor
-            atomic node embedding tensors with (B x At x n_node_feature) shape.
-        last_edge_embedding : torch.Tensor
-            inter atomic edge embedding tensors with (B x At x Nbr x n_edge_feature) shape.
+        node_embedding : torch.Tensor
+            atomic node embedding tensors throughout some message passing layers
+            with (B x At x n_node_feature) shape.
+        edge_embedding : torch.Tensor
+            inter atomic edge embedding tensors throughout some message passing layers
+            with (B x At x Nbr x n_edge_feature) shape.
         2 lists of numpy.ndarray
-            intermediate node and edge embeddings, if return_intermediate=True was used.
+            intermediate node and edge embeddings, if `return_intermediate=True` was used.
         """
         # get tensors from input dictionary
         atomic_numbers = inputs[Keys.Z]
@@ -122,7 +124,7 @@ class GraphToFeatures(nn.Module):
         # message passing
         for message_passing in self.message_passings:
             node_embedding, edge_embedding = message_passing(
-                node_embedding, edge_embedding, nbr_idx, nbr_mask, cell_offset
+                node_embedding, edge_embedding, nbr_idx, nbr_mask
             )
             if self.return_intermid:
                 node_list.append(node_embedding.detach().cpu().numpy())
