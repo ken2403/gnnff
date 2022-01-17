@@ -25,7 +25,7 @@ class GNNFF(nn.Module):
     gaussian_filter_end : float or None, default=None
         center of last Gaussian function.
         if None, use cutoff-0.5 as gaussian_filter_end.
-    trainble_gaussian : bool, default=False
+    trainble_gaussian : bool, default=True
         If True, widths and offset of gaussian_filter are adjusted during training.
     share_weights : bool, default=False
         if True, share the weights across all message passing layers.
@@ -35,7 +35,7 @@ class GNNFF(nn.Module):
     output_activation : collable or None, default=gnnff.nn.activation.shifted_softplus
         activation function for output layers. All hidden layers would the same activation function
         except the last layer that does not apply any activation function.
-    property : dict of property and property_name, default={"forces": "forces", "energy": None}
+    properties : dict of predicted property names, default={"forces": "forces", "energy": None}
         name of the output property. Set "forces" and "energy" values.
     n_output_layers : int, default=2
         number of output layers.
@@ -65,7 +65,7 @@ class GNNFF(nn.Module):
         n_message_passing: int = 3,
         cutoff: float = 6.0,
         gaussian_filter_end: float = None,
-        trainable_gaussian: bool = False,
+        trainable_gaussian: bool = True,
         share_weights: bool = False,
         return_intermid: bool = False,
         output_activation=shifted_softplus,
