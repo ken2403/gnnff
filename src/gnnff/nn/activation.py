@@ -1,7 +1,7 @@
 import torch.nn as nn
 from torch import Tensor
 
-import gnnff.nn.functional as F
+from gnnff.nn.functional import shifted_softplus
 
 
 __all__ = ["ShiftedSoftplus"]
@@ -30,4 +30,4 @@ class ShiftedSoftplus(nn.Module):
         super().__init__()
 
     def forward(self, input: Tensor) -> Tensor:
-        return F.shifted_softplus(input)
+        return shifted_softplus(input)
