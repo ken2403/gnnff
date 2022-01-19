@@ -1,8 +1,9 @@
 import torch
 from torch import Tensor
 import torch.nn as nn
-from gnnff.nn.base import Dense
-from gnnff.nn.neighbors import GetNodeK, GetEdgeJK
+
+from gnnffpack.nn.base import Dense
+from gnnffpack.nn.neighbors import GetNodeK, GetEdgeJK
 
 
 __all__ = [

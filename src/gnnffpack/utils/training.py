@@ -1,10 +1,9 @@
 import os
-
 import schnetpack as spk
 import torch
 from torch.optim import Adam
 
-from gnnff.train.trainer import Trainer
+from gnnffpack.train.trainer import Trainer
 
 __all__ = ["get_metrics", "get_trainer", "simple_loss_fn"]
 

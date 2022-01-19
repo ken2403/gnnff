@@ -1,6 +1,4 @@
-import logging
 import os
-
 import numpy as np
 import torch
 from torch.utils.data import Dataset
@@ -9,7 +7,7 @@ from ase.db import connect
 from ase.visualize import view
 from ase.neighborlist import neighbor_list
 
-from gnnff.data.keys import Keys
+from gnnffpack.data.keys import Keys
 
 
 __all__ = ["CellData"]

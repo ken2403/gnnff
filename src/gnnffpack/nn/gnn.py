@@ -1,9 +1,9 @@
 from torch import Tensor
 import torch.nn as nn
 
-from gnnff.data.keys import Keys
-from gnnff.nn.embedding import NodeEmbedding, EdgeEmbedding
-from gnnff.nn.message import MessagePassing
+from gnnffpack.data.keys import Keys
+from gnnffpack.nn.embedding import NodeEmbedding, EdgeEmbedding
+from gnnffpack.nn.message import MessagePassing
 
 
 __all__ = ["GraphToFeatures"]

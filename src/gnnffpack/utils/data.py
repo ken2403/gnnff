@@ -3,8 +3,8 @@ import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import RandomSampler
 
-from gnnff.data.keys import Keys
-from gnnff.data.split import train_test_split
+from gnnffpack.data.keys import Keys
+from gnnffpack.data.split import train_test_split
 
 
 __all__ = ["get_loader"]

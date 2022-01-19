@@ -1,10 +1,10 @@
 from torch import Tensor
 import torch.nn as nn
 
-from gnnff.data.keys import Keys
-from gnnff.nn.gnn import GraphToFeatures
-from gnnff.nn.functional import shifted_softplus
-from gnnff.nn.output import OutputModuleError, ForceMapping, EnergyMapping
+from gnnffpack.data.keys import Keys
+from gnnffpack.nn.gnn import GraphToFeatures
+from gnnffpack.nn.functional import shifted_softplus
+from gnnffpack.nn.output import OutputModuleError, ForceMapping, EnergyMapping
 
 
 class GNNFF(nn.Module):
