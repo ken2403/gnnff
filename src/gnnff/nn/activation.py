@@ -1,7 +1,7 @@
 import torch.nn as nn
 from torch import Tensor
 
-import gnnffpack.nn.functional as F
+import gnnff.nn.functional as F
 
 
 __all__ = ["ShiftedSoftplus"]

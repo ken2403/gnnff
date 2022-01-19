@@ -5,12 +5,12 @@ import torch.nn as nn
 import logging
 import argparse
 
-from gnnffpack.data.celldata import CellData
-from gnnffpack.model.gnnff import GNNFF
-from gnnffpack.utils.evaluation import evaluate
-from gnnffpack.utils.data import get_loader
-from gnnffpack.utils.training import get_metrics, get_trainer
-from gnnffpack.utils.script_utils import ScriptError, count_params, read_from_json
+from gnnff.data.celldata import CellData
+from gnnff.model.gnnff import GNNFF
+from gnnff.utils.evaluation import evaluate
+from gnnff.utils.data import get_loader
+from gnnff.utils.training import get_metrics, get_trainer
+from gnnff.utils.script_utils import ScriptError, count_params, read_from_json
 
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))

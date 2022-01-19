@@ -1,8 +1,8 @@
 from torch import Tensor
 import torch.nn as nn
 
-from gnnffpack.nn.functional import shifted_softplus
-from gnnffpack.nn.base import Dense
+from gnnff.nn.functional import shifted_softplus
+from gnnff.nn.base import Dense
 
 
 __all__ = ["OutputModuleError", "ForceMapping", "EnergyMapping"]

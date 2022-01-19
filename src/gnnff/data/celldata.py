@@ -7,7 +7,7 @@ from ase.db import connect
 from ase.visualize import view
 from ase.neighborlist import neighbor_list
 
-from gnnffpack.data.keys import Keys
+from gnnff.data.keys import Keys
 
 
 __all__ = ["CellData"]
