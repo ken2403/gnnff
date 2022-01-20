@@ -25,6 +25,7 @@ def get_loader(dataset, args, logging=None):
     -------
     train_data, val_loader, test_loader : torch.utils.data.DataLoader
     """
+    # TODO:args.split
     train_data, val_data, test_data = train_test_split(
         dataset, *args.split, split_path=args.modelpath, logging=logging
     )
