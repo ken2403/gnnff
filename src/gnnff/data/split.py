@@ -1,5 +1,5 @@
 import os
-from posixpath import split
+import logging
 import numpy as np
 from torch.utils.data import Subset
 
@@ -7,7 +7,9 @@ from torch.utils.data import Subset
 __all__ = ["train_test_split"]
 
 
-def train_test_split(dataset, num_train, num_val, seed=0, split_path=None):
+def train_test_split(
+    dataset, num_train, num_val, seed=0, split_path=None, logging=None
+):
     """
     Splits the dataset into train/validation/test splits, writes split to an npz file and returns subsets.
 
@@ -21,6 +23,8 @@ def train_test_split(dataset, num_train, num_val, seed=0, split_path=None):
         number of validation examples
     split_path : str or None
         Path to split file. Split file will be created where the generated split is stored.
+    logging : logging
+        logger
 
     Returns
     -------
@@ -35,11 +39,15 @@ def train_test_split(dataset, num_train, num_val, seed=0, split_path=None):
         split_path = os.path.abspath(split_path)
         split_file = os.path.join(split_path, "split.npz")
         if os.path.exists(split_file):
+            if logging:
+                logging.info("loading exisiting split file ...")
             file = np.load(split_file)
             train_idx = file["train_idx"].tolist()
             val_idx = file["val_idx"].tolist()
             test_idx = file["test_idx"].tolist()
         else:
+            if logging:
+                logging.info("make new split file ...")
             # set random state
             rs = np.random.RandomState(seed)
             num_all_data = len(dataset)

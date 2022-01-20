@@ -10,7 +10,7 @@ from gnnff.data.split import train_test_split
 __all__ = ["get_loader"]
 
 
-def get_loader(dataset, args):
+def get_loader(dataset, args, logging=None):
     """
     Parameters
     ----------
@@ -18,13 +18,15 @@ def get_loader(dataset, args):
         dataset of cell.
     args : Namespace
         Namespace dict.
+    logging : logging
+        logger
 
     Returns
     -------
     train_data, val_loader, test_loader : torch.utils.data.DataLoader
     """
     train_data, val_data, test_data = train_test_split(
-        dataset, *args.split, split_path=args.modelpath
+        dataset, *args.split, split_path=args.modelpath, logging=logging
     )
     train_loader = DataLoader(
         dataset=train_data,

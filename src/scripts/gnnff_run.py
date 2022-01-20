@@ -26,7 +26,7 @@ def main(args):
 
     # get dataloaders
     logging.info("creating the data splits...")
-    train_loader, val_loader, test_loader = get_loader(dataset, args)
+    train_loader, val_loader, test_loader = get_loader(dataset, args, logging=logging)
 
     # setup property metrics
     metrics = get_metrics(args)

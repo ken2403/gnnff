@@ -8,9 +8,9 @@
         "validation",
         "test"
     ],
-    "mode": "train",
+    "mode": "eval",
     "modelpath": "~/model_directory/",
     "parallel": false,
-    "predict_property" : "forces",
-    "return_intermid" : true
+    "predict_property" : {"forces": "forces", "energy": null},
+    "split": null
 }
