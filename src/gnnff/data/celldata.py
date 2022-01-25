@@ -335,6 +335,7 @@ class CellDataConverter:
 
     def __call__(self, atoms: ase.Atoms) -> dict:
         inputs = _convert_atoms(atoms=atoms, cutoff=self.cutoff)
+        inputs = torchify_dict(inputs)
 
         # Calculate masks
         inputs[Keys.atom_mask] = torch.ones_like(inputs[Keys.Z]).float()
