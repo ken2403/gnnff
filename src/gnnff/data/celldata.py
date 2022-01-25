@@ -10,7 +10,7 @@ from ase.neighborlist import neighbor_list
 from gnnff.data.keys import Keys
 
 
-__all__ = ["CellData"]
+__all__ = ["CellData", "CellDataConverter"]
 
 
 class CellDataError(Exception):
@@ -315,3 +315,36 @@ def torchify_dict(data: dict):
                 "Invalid datatype {} for property {}!".format(type(prop), pname)
             )
     return torch_properties
+
+
+class CellDataConverter:
+    """
+    From ase.Atoms object, convert to GNNFF inputs dict of torch.tensor
+
+    Parameters
+    ----------
+    cutoff : float
+        cutoff radious
+    device : str
+        compute device
+    """
+
+    def __init__(self, cutoff: float, device: str) -> None:
+        self.cutoff = cutoff
+        self.device = device
+
+    def __call__(self, atoms: ase.Atoms) -> dict:
+        inputs = _convert_atoms(atoms=atoms, cutoff=self.cutoff)
+
+        # Calculate masks
+        inputs[Keys.atom_mask] = torch.ones_like(inputs[Keys.Z]).float()
+        mask = inputs[Keys.neighbors] >= 0
+        inputs[Keys.neighbor_mask] = mask.float()
+        inputs[Keys.neighbors] = (
+            inputs[Keys.neighbors] * inputs[Keys.neighbor_mask].long()
+        )
+
+        for key, value in inputs.items():
+            inputs[key] = value.unsqueeze(0).to(self.device)
+
+        return inputs
