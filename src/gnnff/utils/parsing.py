@@ -37,7 +37,7 @@ def make_parser():
     poscar_subparser.add_argument("poscar_path", help="input poscar file path")
     poscar_subparser.add_argument("model_path", help="learned model path")
     poscar_subparser.add_argument(
-        "--cuda", type=str, help="compute device flag", action="store_true"
+        "--cuda", help="compute device flag", action="store_true"
     )
     poscar_subparser.add_argument(
         "--cutoff", type=float, help="cutoff radious", required=True
