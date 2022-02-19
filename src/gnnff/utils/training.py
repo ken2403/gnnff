@@ -4,6 +4,7 @@ import torch
 from torch.optim import Adam
 
 from gnnff.train.trainer import Trainer
+from gnnff.train.hooks.stop import NaNStoppingHook
 
 __all__ = ["get_metrics", "get_trainer", "simple_loss_fn"]
 
@@ -62,20 +63,16 @@ def get_trainer(args, model, train_loader, val_loader, metrics):
     )
     hooks.append(schedule)
 
-    if args.logger == "csv":
-        logger = spk.train.CSVHook(
-            os.path.join(args.modelpath, "log"),
-            metrics,
-            every_n_epochs=args.log_every_n_epochs,
-        )
-        hooks.append(logger)
-    elif args.logger == "tensorboard":
-        logger = spk.train.TensorboardHook(
-            os.path.join(args.modelpath, "log"),
-            metrics,
-            every_n_epochs=args.log_every_n_epochs,
-        )
-        hooks.append(logger)
+    # logger
+    logger = spk.train.CSVHook(
+        os.path.join(args.modelpath, "log"),
+        metrics,
+        every_n_epochs=args.log_every_n_epochs,
+    )
+    hooks.append(logger)
+
+    # early stopping for nan
+    hooks.append(NaNStoppingHook())
 
     # setup loss function
     loss_fn = simple_loss_fn(args)
@@ -103,7 +100,7 @@ def simple_loss_fn(args):
         if args.predict_property["energy"] is not None:
             property_name = args.predict_property["energy"]
         diff = batch[property_name] - result[property_name]
-        diff = diff ** 2
+        diff = diff**2
         err_sq = torch.mean(diff)
         return err_sq
 
