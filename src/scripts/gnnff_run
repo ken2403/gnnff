@@ -1,16 +1,18 @@
 #!/usr/bin/env python
 import os
+import logging
+
 import torch
 import torch.nn as nn
-import logging
-import argparse
 
 from gnnff.data.celldata import CellData
 from gnnff.model.gnnff import GNNFF
 from gnnff.utils.evaluation import evaluate
 from gnnff.utils.data import get_loader
 from gnnff.utils.training import get_metrics, get_trainer
-from gnnff.utils.script_utils import ScriptError, count_params, read_from_json
+from gnnff.utils.script_utils import ScriptError, count_params
+from gnnff.utils.parsing import make_parser, read_from_json
+from gnnff.utils.poscar import FromPoscarToXml
 
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
@@ -96,9 +98,15 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("argsjsonpath", help="json file path")
+    parser = make_parser()
     args = parser.parse_args()
-    args = read_from_json(args.argsjsonpath)
-
-    main(args)
+    # from_json
+    if args.input == "from_json":
+        args = read_from_json(args.json_path)
+        main(args)
+    # from_poscar
+    elif args.input == "from_poscar":
+        converter = FromPoscarToXml(
+            poscar_path=args.poscar_path, model_path=args.model_path, cuda=args.cuda
+        )
+        converter(cutoff=args.cutoff)
