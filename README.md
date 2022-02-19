@@ -85,9 +85,10 @@ You can also input one `POSCAR` structure file into the learned model to calcula
 This is useful for phonon calculations with [phonopy](https://phonopy.github.io/phonopy/).
 
 ```bash
-gnnff_run  from_poscar  /path_to_POSCAR  /path_to_learned_model  --cutoff  cutoff_radious
+gnnff_run  from_poscar  /path_to_POSCAR  /path_to_learned_model  --cutoff  cutoff_radious  [--cuda]
 ```
 
+If GPU is availabel, set `--cuda`.
 The calculation results are written to `gnnff_run.xml` file and saved in the same directory as the `POSCAR`.
 
 ## References
