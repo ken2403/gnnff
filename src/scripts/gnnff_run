@@ -2,7 +2,6 @@
 import os
 import pathlib
 import logging
-from posixpath import split
 
 import torch
 import torch.nn as nn

@@ -2,9 +2,9 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import RandomSampler
-import schnetpack as spk
 
 from gnnff.data.keys import Keys
+from gnnff.data.split import train_test_split
 
 
 __all__ = ["get_loader"]
@@ -31,13 +31,13 @@ def get_loader(dataset, args, split_path, logging=None):
     if args.mode == "train":
         if logging is not None:
             logging.info("create splits...")
-        data_train, data_val, data_test = spk.data.train_test_split(
+        data_train, data_val, data_test = train_test_split(
             dataset, *args.split, split_file=split_path
         )
     else:
         if logging is not None:
             logging.info("loading exiting split file ...")
-        data_train, data_val, data_test = spk.data.train_test_split(
+        data_train, data_val, data_test = train_test_split(
             dataset, split_file=split_path
         )
 
