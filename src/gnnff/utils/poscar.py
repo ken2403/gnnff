@@ -109,11 +109,11 @@ class FromPoscarToXml:
         i1 = ET.SubElement(generator, "i")
         i1.set("name", "program")
         i1.set("type", "string")
-        i1.text = "schnet"
+        i1.text = "gnnff"
         i2 = ET.SubElement(generator, "i")
         i2.set("name", "version")
         i2.set("type", "string")
-        i2.text = "v1.0.0"
+        i2.text = "v" + gnnff.__version__.__version__
 
         calculation = ET.SubElement(root, "calculation")
         structure = ET.SubElement(calculation, "structure")
