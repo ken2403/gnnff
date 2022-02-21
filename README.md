@@ -6,7 +6,7 @@
 ![model](./docs/image/model.jpeg)
 
 GNNFF [1] is a graph neural network framework to directly predict atomic forces from automatically extracted features of the local atomic environment that are translationally-invariant, but rotationally-covariant to the coordinate of the atoms.
-This package is is an atomic neural network force field constructed based on GNNFF.
+This package is an atomistic force fields that constructed based on GNNFF.
 
 **Requirements:**
 
