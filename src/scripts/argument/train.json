@@ -28,8 +28,8 @@
     "n_node_feature": 50,
     "n_output_layers": 2,
     "predict_property": {"forces": "forces", "energy": null},
-    "regularization": "l1",
-    "regularization_lambda": 0.01,
+    "regularization": null,
+    "regularization_lambda": 0.0,
     "trainable_gaussian": true,
     "share_weights": false
 }

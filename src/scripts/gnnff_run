@@ -2,6 +2,7 @@
 import os
 import pathlib
 import logging
+from posixpath import split
 
 import torch
 import torch.nn as nn
@@ -31,7 +32,10 @@ def main(args):
     dataset = CellData(db_path=args.datapath, cutoff=args.cutoff)
 
     # get dataloaders
-    train_loader, val_loader, test_loader = get_loader(dataset, args, logging=logging)
+    split_path = os.path.join(args.modelpath, "split.npz")
+    train_loader, val_loader, test_loader = get_loader(
+        dataset, args, split_path=split_path, logging=logging
+    )
 
     # setup property metrics
     metrics = get_metrics(args)
