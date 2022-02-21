@@ -1,7 +1,8 @@
 import os
+
 import numpy as np
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, ConcatDataset
 import ase
 from ase.db import connect
 from ase.visualize import view
@@ -168,6 +169,9 @@ class CellData(Dataset):
     def __len__(self):
         with connect(self.db_path) as conn:
             return conn.count()
+
+    def __add__(self, other: Dataset) -> ConcatDataset:
+        return super().__add__(other)
 
 
 def _get_center_of_gravity(atoms: ase.Atoms) -> np.ndarray:
