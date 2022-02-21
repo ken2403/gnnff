@@ -19,7 +19,7 @@ def evaluate(
     results = []
 
     loaders = dict(train=train_loader, validation=val_loader, test=test_loader)
-    for datasplit in args.eval_data:
+    for datasplit in args.split:
         header += [
             "{} MAE".format(datasplit, args.predict_property),
             "{} RMSE".format(datasplit, args.predict_property),
