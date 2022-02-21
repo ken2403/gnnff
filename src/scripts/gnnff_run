@@ -11,7 +11,7 @@ from gnnff.model.gnnff import GNNFF
 from gnnff.utils.evaluation import evaluate
 from gnnff.utils.data import get_loader
 from gnnff.utils.training import get_metrics, get_trainer
-from gnnff.utils.script_utils import ScriptError, count_params
+from gnnff.utils.script_utils import ScriptError, set_random_seed, count_params
 from gnnff.utils.parsing import make_parser, read_from_json
 from gnnff.utils.poscar import FromPoscarToXml
 
@@ -23,12 +23,14 @@ def main(args):
     # set up learning environment
     device = torch.device("cuda" if args.cuda else "cpu")
 
+    # set random seed
+    set_random_seed(args.seed, logging=logging)
+
     # get dataset
     logging.info("loading the dataset...")
     dataset = CellData(db_path=args.datapath, cutoff=args.cutoff)
 
     # get dataloaders
-    logging.info("creating the data splits...")
     train_loader, val_loader, test_loader = get_loader(dataset, args, logging=logging)
 
     # setup property metrics
@@ -58,7 +60,7 @@ def main(args):
 
         # training
         trainer = get_trainer(args, model, train_loader, val_loader, metrics)
-        logging.info("training ...")
+        logging.info("training GNNFF ...")
         torch.backends.cudnn.benchmark = True
         trainer.train(
             device, n_epochs=args.n_epochs, lambda_=args.regularization_lambda
