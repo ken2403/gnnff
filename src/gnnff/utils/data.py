@@ -2,15 +2,15 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import RandomSampler
+import schnetpack as spk
 
 from gnnff.data.keys import Keys
-from gnnff.data.split import train_test_split
 
 
 __all__ = ["get_loader"]
 
 
-def get_loader(dataset, args, logging=None):
+def get_loader(dataset, args, split_path, logging=None):
     """
     Parameters
     ----------
@@ -18,6 +18,8 @@ def get_loader(dataset, args, logging=None):
         dataset of cell.
     args : Namespace
         Namespace dict.
+    split_path : str
+        path to split file.
     logging : logging
         logger
 
@@ -25,36 +27,49 @@ def get_loader(dataset, args, logging=None):
     -------
     train_data, val_loader, test_loader : torch.utils.data.DataLoader
     """
-    # TODO:args.split
-    train_data, val_data, test_data = train_test_split(
-        dataset, *args.split, split_path=args.modelpath, logging=logging
-    )
+    # create or load dataset splits depending on args.mode
+    if args.mode == "train":
+        if logging is not None:
+            logging.info("create splits...")
+        data_train, data_val, data_test = spk.data.train_test_split(
+            dataset, *args.split, split_file=split_path
+        )
+    else:
+        if logging is not None:
+            logging.info("loading exiting split file ...")
+        data_train, data_val, data_test = spk.data.train_test_split(
+            dataset, split_file=split_path
+        )
+
+    if logging is not None:
+        logging.info("create data loader ...")
+
     train_loader = DataLoader(
-        dataset=train_data,
+        dataset=data_train,
         batch_size=args.batch_size,
-        sampler=RandomSampler(train_data),
+        sampler=RandomSampler(data_train),
         num_workers=4,
         pin_memory=args.cuda,
         collate_fn=_collate_aseatoms,
     )
     val_loader = DataLoader(
-        dataset=val_data,
+        dataset=data_val,
         batch_size=args.batch_size,
         shuffle=True,
         num_workers=2,
         pin_memory=args.cuda,
         collate_fn=_collate_aseatoms,
     )
-    if len(test_data) != 0:
+    if len(data_test) != 0:
         test_loader = DataLoader(
-            dataset=test_data,
+            dataset=data_test,
             batch_size=args.batch_size,
             shuffle=True,
             num_workers=2,
             pin_memory=args.cuda,
             collate_fn=_collate_aseatoms,
         )
-    elif len(test_data) == 0:
+    elif len(data_test) == 0:
         test_loader = None
     return train_loader, val_loader, test_loader
 
