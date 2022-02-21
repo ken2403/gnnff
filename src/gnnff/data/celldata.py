@@ -102,6 +102,27 @@ class CellData(Dataset):
         at, _ = self.get_properties(idx)
         view(at, viewer=viewer)
 
+    def get_metadata(self, key=None):
+        """
+        Returns an entry from the metadata dictionary of the ASE db.
+
+        Parameters
+        ----------
+        key : str
+            Name of metadata entry. Return full dict if `None`.
+
+        Returns
+        -------
+        value
+            Value of metadata entry or full metadata dict, if key is `None`.
+        """
+        with connect(self.dbpath) as conn:
+            if key is None:
+                return conn.metadata
+            if key in conn.metadata.keys():
+                return conn.metadata[key]
+        return None
+
     def _get_available_properties(self, properties):
         """
         Get available properties from argument or database.
