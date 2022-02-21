@@ -1,4 +1,4 @@
-import os
+import pathlib
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as md
 import numpy as np
@@ -9,6 +9,7 @@ import ase.io
 import gnnff
 
 __all__ = ["FromPoscarToXml"]
+
 
 FILE_NAME_RUN = "gnnff_run.xml"
 
@@ -29,7 +30,12 @@ class FromPoscarToXml:
         if True, computing on GPU
     """
 
-    def __init__(self, poscar_path: str, model_path: str, cuda: bool) -> None:
+    def __init__(
+        self,
+        poscar_path: str,
+        model_path: str,
+        cuda: bool,
+    ) -> None:
         self.poscar_path = poscar_path
         self.model_path = model_path
         self.device = torch.device("cuda" if cuda else "cpu")
@@ -50,6 +56,10 @@ class FromPoscarToXml:
         """
         inputs, at = self.from_poscar(cutoff=cutoff)
         self.to_xml(inputs=inputs, atoms=at)
+
+    @staticmethod
+    def showFileName():
+        return FILE_NAME_RUN
 
     def from_poscar(
         self,
@@ -79,7 +89,11 @@ class FromPoscarToXml:
 
         return inputs, at
 
-    def _convert_xml(pred, atoms):
+    def _convert_xml(
+        self,
+        pred,
+        atoms,
+    ):
         # get information of structure
         positions = atoms.get_positions()
         basis = np.array(atoms.get_cell())
@@ -151,8 +165,10 @@ class FromPoscarToXml:
             save path of result .xml file. Default is same dirctory as POSCAR file.
         """
         if save_path is None:
-            save_path = os.path.pardir(os.path.abspath(self.poscar_path))
-        save_path = os.path.join(save_path, FILE_NAME_RUN)
+            save_path = pathlib.Path(self.poscar_path).parent
+        else:
+            save_path = pathlib.Path(save_path)
+        save_path = save_path.joinpath(save_path, FILE_NAME_RUN)
 
         model = torch.load(self.model_path, map_location=self.device)
         pred = model(inputs)
