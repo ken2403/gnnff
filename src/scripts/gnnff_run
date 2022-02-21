@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import pathlib
 import logging
 
 import torch
@@ -36,7 +37,7 @@ def main(args):
     # train or eval
     if args.mode == "train":
         # build model
-        logging.info("building the model...")
+        logging.info("building the GNNFF model...")
         model = GNNFF(
             n_node_feature=args.n_node_feature,
             n_edge_feature=args.n_edge_feature,
@@ -56,14 +57,13 @@ def main(args):
         )
 
         # training
-        logging.info("setting up training...")
         trainer = get_trainer(args, model, train_loader, val_loader, metrics)
-        logging.info("training...")
+        logging.info("training ...")
         torch.backends.cudnn.benchmark = True
         trainer.train(
             device, n_epochs=args.n_epochs, lambda_=args.regularization_lambda
         )
-        logging.info("...training done!")
+        logging.info("... training done!")
 
     # train or eval
     elif args.mode == "eval":
@@ -106,7 +106,14 @@ if __name__ == "__main__":
         main(args)
     # from_poscar
     elif args.input == "from_poscar":
+        logging.info(f"load POSCAR file ({args.poscar_path})")
         converter = FromPoscarToXml(
             poscar_path=args.poscar_path, model_path=args.model_path, cuda=args.cuda
         )
         converter(cutoff=args.cutoff)
+        save_path = str(
+            pathlib.Path(args.poscar_path)
+            .parent.joinpath(FromPoscarToXml.showFileName())
+            .resolve()
+        )
+        logging.info(f"... save to {save_path}")
