@@ -1,6 +1,5 @@
 # Atomistic Force Fields based on [GNNFF](https://www.nature.com/articles/s41524-021-00543-3)
 
-[![Build Status](https://app.travis-ci.com/ken2403/gnnff.svg?token=R7WEGjG9GVh2d2mwukqp&branch=main)](https://app.travis-ci.com/github/ken2403/gnnff)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black)
 
 ![model](./docs/image/model.jpeg)
