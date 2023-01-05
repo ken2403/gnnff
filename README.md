@@ -1,4 +1,4 @@
-The latest implementation of this model has been merged into [PyTorchGeometric](https://pytorch-geometric.readthedocs.io/en/latest/). Please use the PyG version in the future.
+The latest implementation of this model has been merged into [PyTorch Geometric](https://pytorch-geometric.readthedocs.io/en/latest/). Please use the PyG version in the future.
 - PR: [#5866](https://github.com/pyg-team/pytorch_geometric/pull/5866)
 - Doc: [link](https://pytorch-geometric.readthedocs.io/en/latest/modules/nn.html?highlight=gnnff#torch_geometric.nn.models.GNNFF)
 
